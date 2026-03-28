@@ -1,0 +1,54 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Home"
+  description="Isaac Dessert — Lead Software Engineer. Building things that matter."
+>
+  <section class="min-h-[calc(100vh-4rem)] flex items-center">
+    <div class="max-w-5xl mx-auto px-6 py-24">
+      <div class="max-w-2xl">
+        <!-- Eyebrow -->
+        <p class="font-mono text-accent-green text-sm mb-4 tracking-widest uppercase">
+          Hello, I'm
+        </p>
+
+        <!-- Name -->
+        <h1 class="font-mono font-bold text-6xl md:text-7xl lg:text-8xl text-accent-yellow leading-none mb-4">
+          Isaac<br />Dessert
+        </h1>
+
+        <!-- Title -->
+        <h2 class="font-mono text-xl md:text-2xl text-text-muted mb-8">
+          <span class="text-accent-green">Lead Software Engineer</span>
+        </h2>
+
+        <!-- Tagline -->
+        <p class="text-text-primary text-lg leading-relaxed mb-12 max-w-xl">
+          I build robust systems, lead engineering teams, and write about what I learn along the way.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-wrap gap-4">
+          <a href="/portfolio/about" class="btn-primary">About Me</a>
+          <a href="/portfolio/projects" class="btn-secondary">View Projects</a>
+          <a href="/portfolio/blog" class="btn-secondary">Read Blog</a>
+        </div>
+      </div>
+
+      <!-- Decorative grid lines -->
+      <div class="absolute inset-0 -z-10 overflow-hidden pointer-events-none opacity-5" aria-hidden="true">
+        <div class="absolute inset-0"
+          style="background-image: linear-gradient(#f5e642 1px, transparent 1px), linear-gradient(to right, #f5e642 1px, transparent 1px); background-size: 60px 60px;">
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  section {
+    position: relative;
+  }
+</style>

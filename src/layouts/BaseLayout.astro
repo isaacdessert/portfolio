@@ -1,0 +1,52 @@
+---
+import Nav from '@/components/Nav.astro';
+import Footer from '@/components/Footer.astro';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const {
+  title,
+  description = 'Isaac Dessert — Lead Software Engineer. Personal site, blog, and portfolio.',
+  ogImage = '/og-default.png',
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en" class="bg-bg-primary">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href={canonicalURL} />
+
+    <title>{title} | Isaac Dessert</title>
+    <meta name="description" content={description} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={`${title} | Isaac Dessert`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={ogImage} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | Isaac Dessert`} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/portfolio/favicon.svg" />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <Nav />
+    <main class="flex-1 pt-16">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

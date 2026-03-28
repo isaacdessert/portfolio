@@ -1,0 +1,91 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProjectCard from '@/components/ProjectCard.astro';
+import { featuredRepos } from '@/data/featured';
+
+interface GitHubRepo {
+  id: number;
+  name: string;
+  description: string | null;
+  html_url: string;
+  language: string | null;
+  stargazers_count: number;
+  pushed_at: string;
+  fork: boolean;
+  archived: boolean;
+}
+
+let repos: GitHubRepo[] = [];
+let fetchError = false;
+
+try {
+  const res = await fetch('https://api.github.com/users/isaacdessert/repos?per_page=100&sort=pushed', {
+    headers: {
+      'Accept': 'application/vnd.github.v3+json',
+      'User-Agent': 'isaacdessert-portfolio',
+    },
+  });
+
+  if (res.ok) {
+    const all: GitHubRepo[] = await res.json();
+    repos = all
+      .filter(r => !r.fork && !r.archived)
+      .sort((a, b) => {
+        const aFeatured = featuredRepos.includes(a.name);
+        const bFeatured = featuredRepos.includes(b.name);
+        if (aFeatured && !bFeatured) return -1;
+        if (!aFeatured && bFeatured) return 1;
+        return new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime();
+      });
+  } else {
+    fetchError = true;
+  }
+} catch {
+  fetchError = true;
+}
+---
+
+<BaseLayout
+  title="Projects"
+  description="Open source projects and past work by Isaac Dessert."
+>
+  <div class="max-w-5xl mx-auto px-6 py-20">
+    <header class="mb-12">
+      <h1 class="section-heading">Projects</h1>
+      <p class="section-subheading">// public repos, fetched live from GitHub</p>
+    </header>
+
+    {fetchError ? (
+      <div class="border border-text-muted/30 p-8 text-center">
+        <p class="font-mono text-text-muted text-sm">
+          Could not load repos from GitHub. Check back shortly or visit{' '}
+          <a
+            href="https://github.com/isaacdessert"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-accent-yellow hover:underline"
+          >
+            github.com/isaacdessert
+          </a>{' '}
+          directly.
+        </p>
+      </div>
+    ) : repos.length === 0 ? (
+      <p class="font-mono text-text-muted text-sm">No public repositories found.</p>
+    ) : (
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {repos.map(repo => (
+          <ProjectCard
+            name={repo.name}
+            description={repo.description}
+            language={repo.language}
+            stars={repo.stargazers_count}
+            url={repo.html_url}
+            featured={featuredRepos.includes(repo.name)}
+            updatedAt={repo.pushed_at}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>

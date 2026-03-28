@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary font-sans;
+  }
+
+  ::selection {
+    @apply bg-accent-yellow text-bg-primary;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-primary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-text-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-yellow;
+  }
+}
+
+@layer components {
+  .tag {
+    @apply inline-block px-2 py-0.5 text-xs font-mono rounded border border-accent-green text-accent-green;
+  }
+
+  .btn-primary {
+    @apply inline-block px-6 py-2.5 border border-accent-yellow text-accent-yellow font-mono text-sm
+           hover:bg-accent-yellow hover:text-bg-primary transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply inline-block px-6 py-2.5 border border-text-muted text-text-muted font-mono text-sm
+           hover:border-accent-green hover:text-accent-green transition-colors duration-200;
+  }
+
+  .section-heading {
+    @apply text-3xl font-bold text-accent-yellow font-mono mb-2;
+  }
+
+  .section-subheading {
+    @apply text-text-muted text-sm font-mono mb-10;
+  }
+}

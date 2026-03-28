@@ -1,0 +1,44 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BlogCard from '@/components/BlogCard.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+
+allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+// Estimate read time: ~200 words per minute
+function estimateReadTime(body: string): number {
+  const words = body.trim().split(/\s+/).length;
+  return Math.max(1, Math.round(words / 200));
+}
+---
+
+<BaseLayout
+  title="Blog"
+  description="Writing by Isaac Dessert on engineering, systems, and team leadership."
+>
+  <div class="max-w-5xl mx-auto px-6 py-20">
+    <header class="mb-12">
+      <h1 class="section-heading">Blog</h1>
+      <p class="section-subheading">// thoughts on engineering, systems, and leadership</p>
+    </header>
+
+    {allPosts.length === 0 ? (
+      <p class="font-mono text-text-muted text-sm">No posts yet. Check back soon.</p>
+    ) : (
+      <div class="grid sm:grid-cols-2 gap-4">
+        {allPosts.map(post => (
+          <BlogCard
+            title={post.data.title}
+            date={post.data.date}
+            tags={post.data.tags}
+            excerpt={post.data.excerpt}
+            slug={post.slug}
+            readTime={estimateReadTime(post.body)}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>

@@ -1,0 +1,50 @@
+---
+interface Props {
+  title: string;
+  date: Date;
+  tags?: string[];
+  excerpt?: string;
+  slug: string;
+  readTime?: number;
+}
+
+const { title, date, tags = [], excerpt, slug, readTime } = Astro.props;
+
+const formattedDate = date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+---
+
+<a
+  href={`/portfolio/blog/${slug}`}
+  class="group block bg-bg-surface border border-bg-surface hover:border-accent-yellow transition-colors duration-200 p-6 rounded-sm"
+>
+  <div class="flex items-center gap-3 mb-3">
+    <time class="font-mono text-xs text-text-muted" datetime={date.toISOString()}>
+      {formattedDate}
+    </time>
+    {readTime && (
+      <span class="font-mono text-xs text-text-muted">{readTime} min read</span>
+    )}
+  </div>
+
+  <h2 class="font-mono font-semibold text-text-primary group-hover:text-accent-yellow transition-colors mb-2 leading-snug">
+    {title}
+  </h2>
+
+  {excerpt && (
+    <p class="text-sm text-text-muted leading-relaxed line-clamp-2 mb-4">
+      {excerpt}
+    </p>
+  )}
+
+  {tags.length > 0 && (
+    <div class="flex flex-wrap gap-1.5">
+      {tags.map(tag => (
+        <span class="tag">{tag}</span>
+      ))}
+    </div>
+  )}
+</a>
