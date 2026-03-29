@@ -118,9 +118,8 @@ const terminalData = JSON.stringify({ posts: recentPosts });
         ['whoami',       'About me'],
         ['skills',       'My tech stack'],
         ['experience',   'Work history'],
-        ['blog',         'Recent posts'],
         ['contact',      'How to reach me'],
-        ['open [page]',  'Navigate — about · projects · blog · reading'],
+        ['open [page]',  'Navigate — about · projects · home'],
         ['clear',        'Clear the terminal'],
         ['date',         'Current date & time'],
         ['echo [text]',  'Echo text back'],
@@ -173,18 +172,7 @@ const terminalData = JSON.stringify({ posts: recentPosts });
 
     blog() {
       appendBlank();
-      if (data.posts.length === 0) {
-        appendLine(`  ${m('No posts yet. Check back soon.')}`);
-      } else {
-        appendLine(`  ${y('Recent posts:')}`);
-        appendBlank();
-        data.posts.forEach(post => {
-          appendLine(`  ${g('▸')} ${w(post.title)}`);
-          appendLine(`    ${m(post.date)}`);
-        });
-        appendBlank();
-        appendLine(`  ${m('type')} ${y('open blog')} ${m('to read them.')}`);
-      }
+      appendLine(`  ${m('Blog coming soon.')}`);
       appendBlank();
     },
 
@@ -213,12 +201,10 @@ const terminalData = JSON.stringify({ posts: recentPosts });
       const routes = {
         about:    '/portfolio/about',
         projects: '/portfolio/projects',
-        blog:     '/portfolio/blog',
-        reading:  '/portfolio/reading',
         home:     '/portfolio/',
       };
       if (!page || !routes[page]) {
-        appendLine(`  ${m('Usage:')} ${y('open')} ${g('[about|projects|blog|reading|home]')}`);
+        appendLine(`  ${m('Usage:')} ${y('open')} ${g('[about|projects|home]')}`);
         return;
       }
       appendLine(`  ${m('Navigating to')} ${y('/' + page)} ${m('...')}`);
