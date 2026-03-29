@@ -1,0 +1,309 @@
+---
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('blog', ({ data }) => !data.draft);
+const recentPosts = posts
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 5)
+  .map(p => ({
+    title: p.data.title,
+    slug: p.slug,
+    date: p.data.date.toISOString().split('T')[0],
+  }));
+
+const terminalData = JSON.stringify({ posts: recentPosts });
+---
+
+<div class="max-w-2xl w-full mx-auto lg:mx-0">
+  <!-- Window chrome -->
+  <div class="bg-bg-surface border border-bg-surface rounded-t-md px-4 py-3 flex items-center gap-2">
+    <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+    <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+    <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+    <span class="ml-3 font-mono text-xs text-text-muted">isaac@portfolio ~ %</span>
+  </div>
+
+  <!-- Terminal body -->
+  <div
+    id="terminal-body"
+    class="bg-[#0a0a0a] border border-t-0 border-bg-surface rounded-b-md p-5 h-80 overflow-y-auto cursor-text font-mono text-sm"
+    role="textbox"
+    aria-label="Interactive terminal"
+    aria-multiline="true"
+  >
+    <!-- Output lines -->
+    <div id="terminal-output"></div>
+
+    <!-- Input line -->
+    <div class="flex items-center gap-2 mt-1">
+      <span class="text-accent-green shrink-0">guest@id.dev:~$</span>
+      <div class="relative flex-1 flex items-center">
+        <span id="terminal-display" class="text-text-primary whitespace-pre"></span>
+        <span id="terminal-cursor" class="inline-block w-2 h-4 bg-accent-yellow ml-px animate-pulse"></span>
+        <input
+          id="terminal-input"
+          type="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          class="absolute inset-0 opacity-0 w-full cursor-text"
+          aria-label="Terminal input"
+        />
+      </div>
+    </div>
+  </div>
+
+  <p class="font-mono text-xs text-text-muted mt-2 text-center">
+    type <span class="text-accent-yellow">help</span> to see available commands
+  </p>
+</div>
+
+<script define:vars={{ terminalData }}>
+  const data = JSON.parse(terminalData);
+
+  const output  = document.getElementById('terminal-output');
+  const input   = document.getElementById('terminal-input');
+  const display = document.getElementById('terminal-display');
+  const body    = document.getElementById('terminal-body');
+
+  const history = [];
+  let historyIndex = -1;
+
+  // ── Helpers ────────────────────────────────────────────────────
+
+  function esc(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function appendLine(html, classes = '') {
+    const div = document.createElement('div');
+    div.className = 'leading-relaxed ' + classes;
+    div.innerHTML = html;
+    output.appendChild(div);
+    scrollToBottom();
+  }
+
+  function appendBlank() {
+    const div = document.createElement('div');
+    div.className = 'h-3';
+    output.appendChild(div);
+  }
+
+  function appendPrompt(cmd) {
+    appendLine(
+      `<span class="text-accent-green">guest@id.dev:~$</span> <span class="text-text-primary">${esc(cmd)}</span>`
+    );
+  }
+
+  function scrollToBottom() {
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function y(text) { return `<span class="text-accent-yellow">${text}</span>`; }
+  function g(text) { return `<span class="text-accent-green">${text}</span>`; }
+  function m(text) { return `<span class="text-text-muted">${text}</span>`; }
+  function w(text) { return `<span class="text-text-primary">${text}</span>`; }
+
+  // ── Commands ───────────────────────────────────────────────────
+
+  const commands = {
+    help() {
+      appendLine(`${y('Available commands:')}`);
+      appendBlank();
+      const cmds = [
+        ['whoami',       'About me'],
+        ['skills',       'My tech stack'],
+        ['experience',   'Work history'],
+        ['blog',         'Recent posts'],
+        ['contact',      'How to reach me'],
+        ['open [page]',  'Navigate — about · projects · blog · reading'],
+        ['clear',        'Clear the terminal'],
+        ['date',         'Current date & time'],
+        ['echo [text]',  'Echo text back'],
+      ];
+      cmds.forEach(([cmd, desc]) => {
+        appendLine(`  ${y(cmd.padEnd(18))} ${m(desc)}`);
+      });
+    },
+
+    whoami() {
+      appendBlank();
+      appendLine(`  ${y('Isaac Dessert')}`);
+      appendLine(`  ${m('Lead Software Engineer')}`);
+      appendLine(`  ${m('Grand Rapids, Michigan')}`);
+      appendBlank();
+      appendLine(`  ${w('Building scalable systems and leading engineering teams.')}`);
+      appendLine(`  ${w('Currently at')} ${g('Shipium')} ${m('— Employee of the Quarter, Sep 2024.')}`);
+      appendBlank();
+      appendLine(`  ${m('type')} ${y('experience')} ${m('for work history or')} ${y('skills')} ${m('for tech stack.')}`);
+    },
+
+    skills() {
+      appendBlank();
+      const stack = {
+        'Languages': ['TypeScript', 'JavaScript', 'Python', 'Go', 'SQL'],
+        'Frontend':  ['React', 'Astro', 'Next.js', 'Tailwind CSS'],
+        'Backend':   ['Node.js', 'Express', 'FastAPI', 'PostgreSQL', 'Redis'],
+        'DevOps':    ['Docker', 'Kubernetes', 'GitHub Actions', 'AWS', 'Terraform'],
+      };
+      Object.entries(stack).forEach(([cat, items]) => {
+        appendLine(`  ${m(cat.padEnd(12))} ${items.map(i => g(i)).join(m(' · '))}`);
+      });
+      appendBlank();
+    },
+
+    experience() {
+      appendBlank();
+      const jobs = [
+        { title: 'Lead Software Engineer', company: 'Shipium',          period: '2022 — Present' },
+        { title: 'Senior Software Engineer', company: 'Previous Co.',   period: '2019 — 2022'   },
+        { title: 'Software Engineer',        company: 'Earlier Co.',    period: '2017 — 2019'   },
+      ];
+      jobs.forEach(job => {
+        appendLine(`  ${y(job.title)}`);
+        appendLine(`  ${g(job.company)} ${m('·')} ${m(job.period)}`);
+        appendBlank();
+      });
+      appendLine(`  ${m('type')} ${y('open about')} ${m('for full resume.')}`);
+    },
+
+    blog() {
+      appendBlank();
+      if (data.posts.length === 0) {
+        appendLine(`  ${m('No posts yet. Check back soon.')}`);
+      } else {
+        appendLine(`  ${y('Recent posts:')}`);
+        appendBlank();
+        data.posts.forEach(post => {
+          appendLine(`  ${g('▸')} ${w(post.title)}`);
+          appendLine(`    ${m(post.date)}`);
+        });
+        appendBlank();
+        appendLine(`  ${m('type')} ${y('open blog')} ${m('to read them.')}`);
+      }
+      appendBlank();
+    },
+
+    contact() {
+      appendBlank();
+      appendLine(`  ${y('Email')}    ${g('isaac@example.com')}`);
+      appendLine(`  ${y('GitHub')}   ${g('github.com/isaacdessert')}`);
+      appendLine(`  ${y('LinkedIn')} ${g('linkedin.com/in/isaacdessert')}`);
+      appendBlank();
+    },
+
+    date() {
+      const now = new Date();
+      appendLine(`  ${g(now.toLocaleString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long',
+        day: 'numeric', hour: '2-digit', minute: '2-digit',
+      }))}`);
+    },
+
+    clear() {
+      output.innerHTML = '';
+    },
+
+    open(args) {
+      const page = args[0]?.toLowerCase();
+      const routes = {
+        about:    '/portfolio/about',
+        projects: '/portfolio/projects',
+        blog:     '/portfolio/blog',
+        reading:  '/portfolio/reading',
+        home:     '/portfolio/',
+      };
+      if (!page || !routes[page]) {
+        appendLine(`  ${m('Usage:')} ${y('open')} ${g('[about|projects|blog|reading|home]')}`);
+        return;
+      }
+      appendLine(`  ${m('Navigating to')} ${y('/' + page)} ${m('...')}`);
+      setTimeout(() => { window.location.href = routes[page]; }, 400);
+    },
+
+    echo(args) {
+      appendLine(`  ${w(esc(args.join(' ')))}`);
+    },
+  };
+
+  // ── Aliases ────────────────────────────────────────────────────
+  commands.about = commands.whoami;
+  commands.ls    = commands.help;
+
+  // ── Execute ────────────────────────────────────────────────────
+
+  function execute(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+
+    history.unshift(trimmed);
+    historyIndex = -1;
+
+    appendPrompt(trimmed);
+
+    const [cmd, ...args] = trimmed.toLowerCase().split(/\s+/);
+
+    if (commands[cmd]) {
+      commands[cmd](args);
+    } else {
+      appendLine(
+        `  ${m('command not found:')} ${y(esc(cmd))} ${m('— type')} ${y('help')} ${m('for available commands.')}`
+      );
+    }
+    appendBlank();
+  }
+
+  // ── Boot message ───────────────────────────────────────────────
+
+  function boot() {
+    appendLine(`${y('isaac@portfolio')} ${m('—')} ${g('interactive terminal')}`);
+    appendLine(m('─'.repeat(46)));
+    appendBlank();
+    appendLine(`  ${m('type')} ${y('help')} ${m('to see available commands.')}`);
+    appendLine(`  ${m('type')} ${y('whoami')} ${m('to learn about me.')}`);
+    appendBlank();
+  }
+
+  // ── Event listeners ────────────────────────────────────────────
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const val = input.value;
+      input.value = '';
+      display.textContent = '';
+      execute(val);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (historyIndex < history.length - 1) {
+        historyIndex++;
+        input.value = history[historyIndex];
+        display.textContent = history[historyIndex];
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex > 0) {
+        historyIndex--;
+        input.value = history[historyIndex];
+        display.textContent = history[historyIndex];
+      } else {
+        historyIndex = -1;
+        input.value = '';
+        display.textContent = '';
+      }
+    }
+  });
+
+  input.addEventListener('input', () => {
+    display.textContent = input.value;
+  });
+
+  // Click anywhere on terminal to focus input
+  body.addEventListener('click', () => input.focus());
+
+  boot();
+  input.focus();
+</script>

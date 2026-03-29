@@ -1,0 +1,94 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import books from '@/data/books';
+
+const reading = books.filter(b => b.status === 'reading');
+const read    = books.filter(b => b.status === 'read');
+const want    = books.filter(b => b.status === 'want');
+---
+
+<BaseLayout
+  title="Reading"
+  description="Books Isaac Dessert is reading, has read, and wants to read."
+>
+  <div class="max-w-3xl mx-auto px-6 py-20">
+    <header class="mb-14">
+      <h1 class="section-heading">Reading</h1>
+      <p class="section-subheading">// books that shaped how I think</p>
+      <p class="text-text-muted text-sm leading-relaxed max-w-xl">
+        A living list. Updated whenever something new gets picked up or finished.
+      </p>
+    </header>
+
+    <!-- Currently Reading -->
+    {reading.length > 0 && (
+      <section class="mb-14">
+        <h2 class="font-mono text-accent-green text-xs uppercase tracking-widest mb-6 flex items-center gap-3">
+          <span class="w-2 h-2 rounded-full bg-accent-green animate-pulse inline-block"></span>
+          Currently Reading
+        </h2>
+        <div class="space-y-4">
+          {reading.map(book => (
+            <div class="border border-accent-green/30 bg-accent-green/5 p-5">
+              <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
+                <h3 class="font-mono font-semibold text-text-primary">{book.title}</h3>
+              </div>
+              <p class="font-mono text-xs text-text-muted mb-2">{book.author}</p>
+              {book.take && (
+                <p class="text-sm text-text-muted leading-relaxed">{book.take}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Read -->
+    {read.length > 0 && (
+      <section class="mb-14">
+        <h2 class="font-mono text-accent-yellow text-xs uppercase tracking-widest mb-6">
+          Read
+        </h2>
+        <div class="space-y-px">
+          {read.map(book => (
+            <div class="group border border-transparent hover:border-bg-surface p-4 -mx-4 transition-colors">
+              <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="text-accent-yellow shrink-0 text-xs font-mono">▸</span>
+                  <div class="min-w-0">
+                    <span class="font-mono text-sm font-semibold text-text-primary">{book.title}</span>
+                    <span class="font-mono text-xs text-text-muted ml-3">{book.author}</span>
+                  </div>
+                </div>
+                {book.year && (
+                  <span class="font-mono text-xs text-text-muted shrink-0">{book.year}</span>
+                )}
+              </div>
+              {book.take && (
+                <p class="text-sm text-text-muted leading-relaxed mt-1.5 ml-6 pl-1">{book.take}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Want to Read -->
+    {want.length > 0 && (
+      <section>
+        <h2 class="font-mono text-text-muted text-xs uppercase tracking-widest mb-6">
+          Want to Read
+        </h2>
+        <div class="space-y-px">
+          {want.map(book => (
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-0.5 p-4 -mx-4">
+              <span class="font-mono text-xs text-text-muted">○</span>
+              <span class="font-mono text-sm text-text-muted">{book.title}</span>
+              <span class="font-mono text-xs text-text-muted/60">— {book.author}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>
