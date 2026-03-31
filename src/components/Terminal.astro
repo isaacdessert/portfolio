@@ -144,10 +144,11 @@ const terminalData = JSON.stringify({ posts: recentPosts });
     skills() {
       appendBlank();
       const stack = {
-        'Languages': ['TypeScript', 'JavaScript', 'Python', 'Go', 'SQL'],
+        'Languages': ['TypeScript', 'JavaScript', 'Python', 'Go', 'SQL', 'Kotlin'],
         'Frontend':  ['React', 'Astro', 'Next.js', 'Tailwind CSS'],
-        'Backend':   ['Node.js', 'Express', 'FastAPI', 'PostgreSQL', 'Redis'],
-        'DevOps':    ['Docker', 'Kubernetes', 'GitHub Actions', 'AWS', 'Terraform'],
+        'Backend':   ['Node.js', 'Java', 'Spring', 'PostgreSQL', 'Redis', 'MongoDB'],
+        'DevOps':    ['Docker', 'Kubernetes', 'AWS', 'Terraform', 'Ansible'],
+        'Tools':     ['Git', 'GitHub', 'GitLab', 'Shell', 'Claude Code', 'Gemini CLI', 'Junie', 'IntelliJ'],
       };
       Object.entries(stack).forEach(([cat, items]) => {
         appendLine(`  ${m(cat.padEnd(12))} ${items.map(i => g(i)).join(m(' · '))}`);
@@ -158,9 +159,11 @@ const terminalData = JSON.stringify({ posts: recentPosts });
     experience() {
       appendBlank();
       const jobs = [
-        { title: 'Lead Software Engineer', company: 'Shipium',          period: '2022 — Present' },
-        { title: 'Senior Software Engineer', company: 'Previous Co.',   period: '2019 — 2022'   },
-        { title: 'Software Engineer',        company: 'Earlier Co.',    period: '2017 — 2019'   },
+        { title: 'Lead Software Engineer',    company: 'Shipium',   period: 'Aug 2025 — Present' },
+        { title: 'Senior Software Engineer',  company: 'Shipium',   period: 'Apr 2024 — Aug 2025' },
+        { title: 'Software Engineer',         company: 'Shipium',   period: 'Aug 2022 — Apr 2024' },
+        { title: 'Software Engineer',         company: 'GameStop',  period: 'Dec 2021 — Jul 2022' },
+        { title: 'Software Engineer',         company: 'Dynatrace', period: 'May 2020 — Nov 2021' },
       ];
       jobs.forEach(job => {
         appendLine(`  ${y(job.title)}`);
@@ -178,7 +181,7 @@ const terminalData = JSON.stringify({ posts: recentPosts });
 
     contact() {
       appendBlank();
-      appendLine(`  ${y('Email')}    ${g('isaac@example.com')}`);
+      appendLine(`  ${y('Email')}    ${g('isaacjdessert@gmail.com')}`);
       appendLine(`  ${y('GitHub')}   ${g('github.com/isaacdessert')}`);
       appendLine(`  ${y('LinkedIn')} ${g('linkedin.com/in/isaacdessert')}`);
       appendBlank();
