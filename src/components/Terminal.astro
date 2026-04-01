@@ -118,6 +118,7 @@ const terminalData = JSON.stringify({ posts: recentPosts });
         ['whoami',       'About me'],
         ['skills',       'My tech stack'],
         ['experience',   'Work history'],
+        ['education',    'My degree'],
         ['contact',      'How to reach me'],
         ['open [page]',  'Navigate — about · projects · home'],
         ['clear',        'Clear the terminal'],
@@ -171,6 +172,13 @@ const terminalData = JSON.stringify({ posts: recentPosts });
         appendBlank();
       });
       appendLine(`  ${m('type')} ${y('open about')} ${m('for full resume.')}`);
+    },
+
+    education() {
+      appendBlank();
+      appendLine(`  ${y('B.S. Computer Science')}`);
+      appendLine(`  ${g('Grand Valley State University')} ${m('·')} ${m('2020')}`);
+      appendBlank();
     },
 
     blog() {
