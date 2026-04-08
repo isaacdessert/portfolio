@@ -20,6 +20,13 @@ const books: Book[] = [
 
   // ── Read ───────────────────────────────────────────────────────
   {
+    title: 'The Goal',
+    author: 'Eliyahu M. Goldratt & Jeff Cox',
+    year: 2024,
+    status: 'read',
+    take: 'A compelling case for lean and the Theory of Constraints told as a novel. The core insight — that inventory is a liability, not an asset, and that anything not contributing to throughput is waste — is simple but cuts deep. What stuck most was how honestly confronting hard truths in the business led to faster solutions than any amount of number-massaging or political maneuvering. The love story subplot felt contrived and I resented that a couple of key ideas were buried in it, but the payoff thread — that fixing the factory also saved the marriage — lands. The same thinking that cleared the plant floor can clear your calendar.',
+  },
+  {
     title: 'Designing Data-Intensive Applications',
     author: 'Martin Kleppmann',
     year: 2024,
