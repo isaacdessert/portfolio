@@ -1,11 +1,11 @@
 ---
 const navLinks = [
-  { label: 'About', href: '/portfolio/about' },
-  { label: 'Projects', href: '/portfolio/projects' },
+  { label: 'About', href: '/about' },
+  { label: 'Projects', href: '/projects' },
   // Blog and Reading are hidden until content is ready.
   // To re-enable: uncomment these two lines and add a "Read Blog" button in index.astro
-  // { label: 'Blog', href: '/portfolio/blog' },
-  // { label: 'Reading', href: '/portfolio/reading' },
+  // { label: 'Blog', href: '/blog' },
+  // { label: 'Reading', href: '/reading' },
 ];
 
 const currentPath = Astro.url.pathname;
@@ -13,7 +13,7 @@ const currentPath = Astro.url.pathname;
 
 <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-primary/90 backdrop-blur-sm border-b border-bg-surface">
   <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href="/portfolio/" class="font-mono font-semibold text-accent-yellow hover:text-white transition-colors">
+    <a href="/" class="font-mono font-semibold text-accent-yellow hover:text-white transition-colors">
       id<span class="text-accent-green">.</span>dev
     </a>
 

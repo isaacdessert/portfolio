@@ -1,7 +1,7 @@
 # Portfolio Site — Claude Context
 
 Personal portfolio site for Isaac Dessert (Lead Software Engineer).
-Built with Astro + Tailwind CSS, hosted on GitHub Pages.
+Built with Astro + Tailwind CSS, hosted on Vercel.
 
 ## Local Development
 
@@ -13,10 +13,8 @@ npm run build     # production build to dist/
 
 ## Deployment
 
-Push to `main` → GitHub Actions builds and deploys automatically to:
-`https://isaacdessert.github.io/portfolio`
-
-Workflow file: `.github/workflows/deploy.yml`
+Push to `main` → Vercel auto-deploys to:
+`https://isaac-dessert-portfolio.vercel.app`
 
 ## Tech Stack
 
@@ -69,7 +67,7 @@ src/
 
 ## Key Config Files
 
-- `astro.config.mjs` — site URL, base path (`/portfolio`), integrations
+- `astro.config.mjs` — site URL, base path (`/`), integrations
 - `tailwind.config.mjs` — color tokens, typography plugin config
 - `tsconfig.json` — TypeScript config with `@/*` path alias for `src/`
 
@@ -154,5 +152,4 @@ or moved to `isaacdessert.github.io`, update `base` in `astro.config.mjs`:
 base: '/',   // for isaacdessert.github.io root repo
 ```
 
-All internal links use the `/portfolio/` prefix — a global find/replace
-would be needed if the base path changes.
+All internal links use root-relative paths (`/about`, `/projects`, etc.) for Vercel deployment.

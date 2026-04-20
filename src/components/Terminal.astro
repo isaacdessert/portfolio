@@ -210,9 +210,9 @@ const terminalData = JSON.stringify({ posts: recentPosts });
     open(args) {
       const page = args[0]?.toLowerCase();
       const routes = {
-        about:    '/portfolio/about',
-        projects: '/portfolio/projects',
-        home:     '/portfolio/',
+        about:    '/about',
+        projects: '/projects',
+        home:     '/',
       };
       if (!page || !routes[page]) {
         appendLine(`  ${m('Usage:')} ${y('open')} ${g('[about|projects|home]')}`);
