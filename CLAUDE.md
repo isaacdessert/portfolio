@@ -111,25 +111,12 @@ Edit `src/data/books.ts`. Each book has:
 }
 ```
 
-## Re-enabling Blog & Reading
+## Blog & Reading Status
 
-Both pages exist and work — they are just hidden from navigation.
-To re-enable:
-
-1. **`src/components/Nav.astro`** — uncomment the two lines:
-   ```ts
-   { label: 'Blog', href: '/portfolio/blog' },
-   { label: 'Reading', href: '/portfolio/reading' },
-   ```
-
-2. **`src/pages/index.astro`** — uncomment the two CTA buttons:
-   ```astro
-   <a href="/portfolio/blog" class="btn-secondary">Read Blog</a>
-   <a href="/portfolio/reading" class="btn-secondary">Reading List</a>
-   ```
-
-3. **`src/components/Terminal.astro`** — restore the `blog` command
-   and add `blog` / `reading` back to the `open` routes and `help` list.
+- **Blog** — live. Posts in `src/content/blog/`, linked in nav, homepage CTA, and terminal.
+- **Reading** — still hidden. To enable: uncomment `{ label: 'Reading', href: '/reading' }` in
+  `Nav.astro`, `<a href="/reading" ...>Reading List</a>` in `index.astro`, and add `reading: '/reading'`
+  to the `open` routes in `Terminal.astro`.
 
 ## Updating Personal Info
 
