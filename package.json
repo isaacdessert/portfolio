@@ -6,12 +6,20 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/tailwind": "^5.1.0",
+    "@notionhq/client": "^5.20.0",
     "@tailwindcss/typography": "^0.5.0",
     "astro": "^5.0.0",
+    "marked": "^18.0.2",
+    "notion-to-md": "^3.1.9",
     "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.5",
+    "vitest": "^4.1.5"
   }
 }
