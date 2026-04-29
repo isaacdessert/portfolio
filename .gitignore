@@ -30,3 +30,6 @@ pnpm-debug.log*
 
 # Astro
 .astro/
+
+# Git worktrees
+.worktrees/
