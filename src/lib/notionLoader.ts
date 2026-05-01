@@ -1,4 +1,4 @@
-import { Client, isFullPage } from '@notionhq/client';
+import { Client, isFullPage, collectPaginatedAPI, type QueryDataSourceResponse } from '@notionhq/client';
 import { NotionToMarkdown } from 'notion-to-md';
 import { marked } from 'marked';
 import { toSlug } from './slug';
@@ -19,22 +19,33 @@ export function notionLoader(): Loader {
       const notion = new Client({ auth: token });
       const n2m = new NotionToMarkdown({ notionClient: notion });
 
-      const response = await notion.dataSources.query({
-        data_source_id: databaseId,
-        filter: {
-          property: 'Status',
-          select: { equals: 'Published' },
-        },
-      });
+      // collectPaginatedAPI generic constraint is too narrow for dataSources.query
+      // (which requires data_source_id in path params), so we cast to a compatible
+      // paginated function signature that accepts the full args.
+      type PaginatedQueryArgs = { data_source_id: string; filter?: unknown; start_cursor?: string };
+      type PaginatedQueryFn = (args: PaginatedQueryArgs) => Promise<QueryDataSourceResponse>;
+      const pages = await collectPaginatedAPI(
+        notion.dataSources.query.bind(notion.dataSources) as PaginatedQueryFn,
+        {
+          data_source_id: databaseId,
+          filter: {
+            property: 'Status',
+            select: { equals: 'Published' },
+          },
+        }
+      );
 
       store.clear();
 
-      for (const page of response.results) {
+      let loadedCount = 0;
+      for (const page of pages) {
         if (!isFullPage(page)) continue;
 
         const nameProp = page.properties['Name'];
         const title =
-          nameProp?.type === 'title' ? (nameProp.title[0]?.plain_text ?? 'Untitled') : 'Untitled';
+          nameProp?.type === 'title'
+            ? nameProp.title.map((t) => t.plain_text).join('') || 'Untitled'
+            : 'Untitled';
 
         const dateProp = page.properties['Date'];
         const dateStr =
@@ -49,12 +60,23 @@ export function notionLoader(): Loader {
         const excerptProp = page.properties['Excerpt'];
         const excerpt =
           excerptProp?.type === 'rich_text'
-            ? (excerptProp.rich_text[0]?.plain_text ?? '')
+            ? excerptProp.rich_text.map((t) => t.plain_text).join('')
             : '';
 
         const slug = toSlug(title);
 
-        const mdBlocks = await n2m.pageToMarkdown(page.id);
+        if (store.get(slug)) {
+          logger.warn(`Slug collision: "${slug}" already exists. Skipping duplicate page ${page.id}.`);
+          continue;
+        }
+
+        let mdBlocks;
+        try {
+          mdBlocks = await n2m.pageToMarkdown(page.id);
+        } catch (err) {
+          logger.error(`Failed to fetch blocks for page "${title}" (${page.id}): ${err}`);
+          continue;
+        }
         const { parent: body } = n2m.toMarkdownString(mdBlocks);
 
         const html = await marked(body);
@@ -73,10 +95,12 @@ export function notionLoader(): Loader {
             html,
             metadata: { headings: [], imagePaths: [] },
           },
+          digest: page.last_edited_time,
         });
+        loadedCount++;
       }
 
-      logger.info(`Loaded ${response.results.length} posts from Notion`);
+      logger.info(`Loaded ${loadedCount} posts from Notion`);
     },
   };
 }
