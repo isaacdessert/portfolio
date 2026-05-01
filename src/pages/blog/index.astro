@@ -34,8 +34,8 @@ function estimateReadTime(body: string): number {
             date={post.data.date}
             tags={post.data.tags}
             excerpt={post.data.excerpt}
-            slug={post.slug}
-            readTime={estimateReadTime(post.body)}
+            slug={post.id}
+            readTime={estimateReadTime(post.body ?? '')}
           />
         ))}
       </div>
