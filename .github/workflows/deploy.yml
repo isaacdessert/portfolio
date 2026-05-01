@@ -3,6 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '0 6 * * *'   # 6am UTC = midnight US Central
   workflow_dispatch:
 
 permissions:
@@ -33,6 +35,9 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
