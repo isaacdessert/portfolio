@@ -20,7 +20,7 @@ Push to `main` → Vercel auto-deploys to:
 
 - **Framework**: Astro 5 (static output)
 - **Styling**: Tailwind CSS v3 + `@tailwindcss/typography`
-- **Blog**: Astro Content Collections (Markdown)
+- **Blog**: Notion CMS via Astro 5 Content Layer
 - **Projects**: GitHub REST API fetched at build time (no token — public API only)
 - **Hosting**: GitHub Pages via GitHub Actions
 
@@ -73,21 +73,30 @@ src/
 
 ## Blog Posts
 
-Add a file to `src/content/blog/your-title.md`:
+Posts are managed in Notion. Publishing workflow:
 
-```markdown
----
-title: "Post Title"
-date: 2026-03-28
-tags: [engineering, thoughts]
-excerpt: "One sentence shown on the blog index card."
-draft: false   # set true to write without publishing
----
+1. Open your Notion blog database
+2. Create a new page — fill in Name, Date, Tags, Excerpt, and body content
+3. Set **Status** to `Published` (must be a **Select** field type, not the native Status type)
+4. The site rebuilds nightly at midnight US Central (6am UTC) automatically
+5. For immediate publish: go to GitHub → Actions → "Deploy to GitHub Pages" → Run workflow
 
-Content here...
-```
+**Notion database fields:**
+| Field | Type | Notes |
+|---|---|---|
+| Name | Title | Post title → URL slug |
+| Date | Date | Publish date |
+| Tags | Multi-select | e.g. engineering, leadership |
+| Excerpt | Text | One-liner shown on blog index card |
+| Status | **Select** | Options: `Published`, `Draft` — must be Select type, not Status type |
+| (page body) | Notion blocks | Full post content |
 
-Filename becomes the URL slug. Push to `main` to publish.
+**Local dev with Notion:**
+Create a `.env` file in the project root (already gitignored) and fill in:
+- `NOTION_TOKEN` — from your Notion integration settings (notion.so/my-integrations)
+- `NOTION_DATABASE_ID` — the 32-char ID from the database URL
+
+If these are not set, the build skips Notion and shows "No posts yet."
 
 ## Featured Projects
 
