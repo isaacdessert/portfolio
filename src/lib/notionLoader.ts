@@ -22,6 +22,7 @@ export function notionLoader(): Loader {
       // collectPaginatedAPI generic constraint is too narrow for dataSources.query
       // (which requires data_source_id in path params), so we cast to a compatible
       // paginated function signature that accepts the full args.
+      // Tested with @notionhq/client@5.20.0 — revisit if upgrading the SDK.
       type PaginatedQueryArgs = { data_source_id: string; filter?: unknown; start_cursor?: string };
       type PaginatedQueryFn = (args: PaginatedQueryArgs) => Promise<QueryDataSourceResponse>;
       const pages = await collectPaginatedAPI(
@@ -34,6 +35,11 @@ export function notionLoader(): Loader {
           },
         }
       );
+
+      if (pages.length === 0) {
+        logger.info('No published posts found in Notion');
+        return;
+      }
 
       store.clear();
 

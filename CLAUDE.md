@@ -1,7 +1,7 @@
 # Portfolio Site — Claude Context
 
 Personal portfolio site for Isaac Dessert (Lead Software Engineer).
-Built with Astro + Tailwind CSS, hosted on Vercel.
+Built with Astro + Tailwind CSS, hosted on GitHub Pages.
 
 ## Local Development
 
@@ -13,8 +13,9 @@ npm run build     # production build to dist/
 
 ## Deployment
 
-Push to `main` → Vercel auto-deploys to:
-`https://isaac-dessert-portfolio.vercel.app`
+Push to `main` → GitHub Actions builds and deploys to GitHub Pages automatically.
+Nightly rebuild at midnight US Central fetches new Notion posts.
+Manual deploy: GitHub → Actions → "Deploy to GitHub Pages" → Run workflow.
 
 ## Tech Stack
 
@@ -122,7 +123,7 @@ Edit `src/data/books.ts`. Each book has:
 
 ## Blog & Reading Status
 
-- **Blog** — live. Posts in `src/content/blog/`, linked in nav, homepage CTA, and terminal.
+- **Blog** — live. Posts managed in Notion database, fetched at build time. Linked in nav, homepage CTA, and terminal.
 - **Reading** — still hidden. To enable: uncomment `{ label: 'Reading', href: '/reading' }` in
   `Nav.astro`, `<a href="/reading" ...>Reading List</a>` in `index.astro`, and add `reading: '/reading'`
   to the `open` routes in `Terminal.astro`.
@@ -148,4 +149,4 @@ or moved to `isaacdessert.github.io`, update `base` in `astro.config.mjs`:
 base: '/',   // for isaacdessert.github.io root repo
 ```
 
-All internal links use root-relative paths (`/about`, `/projects`, etc.) for Vercel deployment.
+All internal links use root-relative paths (`/about`, `/projects`, etc.) — the Astro base path config prepends `/portfolio/` automatically.

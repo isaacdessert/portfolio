@@ -21,4 +21,8 @@ describe('toSlug', () => {
   it('handles hyphens already in the title', () => {
     expect(toSlug('Well-Known Pattern')).toBe('well-known-pattern');
   });
+
+  it('returns empty string for blank input', () => {
+    expect(toSlug('')).toBe('');
+  });
 });
