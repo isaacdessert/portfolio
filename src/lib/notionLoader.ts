@@ -1,4 +1,4 @@
-import { Client, isFullPage, collectPaginatedAPI, type QueryDataSourceResponse } from '@notionhq/client';
+import { Client, isFullPage, collectPaginatedAPI } from '@notionhq/client';
 import { NotionToMarkdown } from 'notion-to-md';
 import { marked } from 'marked';
 import { toSlug } from './slug';
@@ -19,22 +19,19 @@ export function notionLoader(): Loader {
       const notion = new Client({ auth: token });
       const n2m = new NotionToMarkdown({ notionClient: notion });
 
-      // collectPaginatedAPI generic constraint is too narrow for dataSources.query
-      // (which requires data_source_id in path params), so we cast to a compatible
-      // paginated function signature that accepts the full args.
-      // Tested with @notionhq/client@5.20.0 — revisit if upgrading the SDK.
-      type PaginatedQueryArgs = { data_source_id: string; filter?: unknown; start_cursor?: string };
-      type PaginatedQueryFn = (args: PaginatedQueryArgs) => Promise<QueryDataSourceResponse>;
-      const pages = await collectPaginatedAPI(
-        notion.dataSources.query.bind(notion.dataSources) as PaginatedQueryFn,
-        {
-          data_source_id: databaseId,
+      let pages;
+      try {
+        pages = await collectPaginatedAPI(notion.databases.query, {
+          database_id: databaseId,
           filter: {
             property: 'Status',
             select: { equals: 'Published' },
           },
-        }
-      );
+        });
+      } catch (err) {
+        logger.error(`Failed to query Notion database: ${err}`);
+        return;
+      }
 
       if (pages.length === 0) {
         logger.info('No published posts found in Notion');
