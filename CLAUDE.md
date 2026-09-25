@@ -1,29 +1,45 @@
 # Portfolio Site — Claude Context
 
 Personal portfolio site for Isaac Dessert (Lead Software Engineer).
-Built with Astro + Tailwind CSS, hosted on GitHub Pages.
+Built with Astro + Tailwind CSS, hosted on Vercel at https://isaacjdessert.dev.
 
 ## Local Development
 
 ```bash
 npm install
-npm run dev       # http://localhost:4321/portfolio/
+npm run dev       # http://localhost:4321/
 npm run build     # production build to dist/
 ```
 
 ## Deployment
 
-Push to `main` → GitHub Actions builds and deploys to GitHub Pages automatically.
-Nightly rebuild at midnight US Central fetches new Notion posts.
-Manual deploy: GitHub → Actions → "Deploy to GitHub Pages" → Run workflow.
+Vercel Git integration: push to `main` → production deploy to isaacjdessert.dev.
+Any other branch / PR → preview deploy with its own URL.
+
+Nightly rebuild at midnight US Central fetches new Notion posts:
+`.github/workflows/nightly-rebuild.yml` POSTs to a Vercel Deploy Hook
+(stored as the `VERCEL_DEPLOY_HOOK` repo secret).
+Manual rebuild: GitHub → Actions → "Nightly Rebuild" → Run workflow
+(or "Redeploy" in the Vercel dashboard).
+
+Env vars (`NOTION_TOKEN`, `NOTION_DATABASE_ID`, and any future project
+secrets) live in Vercel → Project → Settings → Environment Variables,
+set for both Production and Preview.
+
+## Rendering Model
+
+`output: 'static'` + `@astrojs/vercel` adapter (v8 — v9+ requires newer Astro).
+Everything is prerendered to static HTML by default. A page or endpoint that
+declares `export const prerender = false` is deployed as a Vercel serverless
+function instead.
 
 ## Tech Stack
 
-- **Framework**: Astro 5 (static output)
+- **Framework**: Astro 5 (static by default, opt-in serverless via `@astrojs/vercel`)
 - **Styling**: Tailwind CSS v3 + `@tailwindcss/typography`
 - **Blog**: Notion CMS via Astro 5 Content Layer
 - **Projects**: GitHub REST API fetched at build time (no token — public API only)
-- **Hosting**: GitHub Pages via GitHub Actions
+- **Hosting**: Vercel (domain + DNS also on Vercel)
 
 ## Color System
 
@@ -80,7 +96,7 @@ Posts are managed in Notion. Publishing workflow:
 2. Create a new page — fill in Name, Date, Tags, Excerpt, and body content
 3. Set **Status** to `Published` (must be a **Select** field type, not the native Status type)
 4. The site rebuilds nightly at midnight US Central (6am UTC) automatically
-5. For immediate publish: go to GitHub → Actions → "Deploy to GitHub Pages" → Run workflow
+5. For immediate publish: go to GitHub → Actions → "Nightly Rebuild" → Run workflow
 
 **Notion database fields:**
 | Field | Type | Notes |
@@ -142,11 +158,18 @@ for a static build). Forks and archived repos are filtered out automatically.
 
 ## Base Path
 
-The site is hosted at `/portfolio/` (not root). If the repo is ever renamed
-or moved to `isaacdessert.github.io`, update `base` in `astro.config.mjs`:
+The site is served from the domain root (`base: '/'`). All internal links use
+root-relative paths (`/about`, `/projects`, etc.).
 
-```js
-base: '/',   // for isaacdessert.github.io root repo
-```
+## Status & TODOs
 
-All internal links use root-relative paths (`/about`, `/projects`, etc.) — the Astro base path config prepends `/portfolio/` automatically.
+**Status:** Migrated hosting from GitHub Pages to Vercel (adapter + deploy-hook
+nightly rebuild). Next up: the "lab" system for shipping small projects at
+`/lab/<slug>` (optionally `<slug>.isaacjdessert.dev`) with opt-in API routes.
+
+**TODOs:**
+- [ ] Vercel: confirm project is Git-connected to `isaacdessert/portfolio` (auto-deploy `main`, previews on branches)
+- [ ] Vercel: set `NOTION_TOKEN` / `NOTION_DATABASE_ID` for Production + Preview
+- [ ] Vercel: create Deploy Hook on `main`; save URL as GitHub secret `VERCEL_DEPLOY_HOOK`
+- [ ] GitHub: disable Pages (Settings → Pages) once Vercel is confirmed serving the domain
+- [ ] Lab system design (section 2+ of the brainstorm)

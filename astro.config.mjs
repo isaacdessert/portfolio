@@ -1,12 +1,13 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  // Update this to match your GitHub repo name.
-  // If your repo is "isaacdessert.github.io", set base: '/'
-  // If your repo is "portfolio", set base: '/portfolio'
-  site: 'https://isaac-dessert-portfolio.vercel.app',
+  site: 'https://isaacjdessert.dev',
   base: '/',
   integrations: [tailwind()],
+  // Static by default. Any page or endpoint that exports
+  // `const prerender = false` becomes a Vercel serverless function.
   output: 'static',
+  adapter: vercel(),
 });

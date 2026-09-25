@@ -1,0 +1,25 @@
+name: Nightly Rebuild
+
+# Vercel builds on every push to main. This job only exists to pick up
+# new Notion posts overnight by hitting a Vercel Deploy Hook.
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 6am UTC = midnight US Central
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    name: Trigger Vercel deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call deploy hook
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK secret is not set"
+            exit 1
+          fi
+          curl --fail --silent --show-error -X POST "$VERCEL_DEPLOY_HOOK"
