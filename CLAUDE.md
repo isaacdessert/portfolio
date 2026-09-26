@@ -168,8 +168,21 @@ nightly rebuild). Next up: the "lab" system for shipping small projects at
 `/lab/<slug>` (optionally `<slug>.isaacjdessert.dev`) with opt-in API routes.
 
 **TODOs:**
-- [ ] Vercel: confirm project is Git-connected to `isaacdessert/portfolio` (auto-deploy `main`, previews on branches)
-- [ ] Vercel: set `NOTION_TOKEN` / `NOTION_DATABASE_ID` for Production + Preview
-- [ ] Vercel: create Deploy Hook on `main`; save URL as GitHub secret `VERCEL_DEPLOY_HOOK`
-- [ ] GitHub: disable Pages (Settings → Pages) once Vercel is confirmed serving the domain
-- [ ] Lab system design (section 2+ of the brainstorm)
+- [x] Vercel: confirm project is Git-connected to `isaacdessert/portfolio` (auto-deploy `main`, previews on branches)
+- [x] Vercel: set `NOTION_TOKEN` / `NOTION_DATABASE_ID` for Production + Preview
+- [x] Vercel: create Deploy Hook on `main`; save URL as GitHub secret `VERCEL_DEPLOY_HOOK`
+- [x] GitHub: disable Pages (Settings → Pages) once Vercel is confirmed serving the domain
+- [x] Lab system design — spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`
+- Lab platform build (plan: `docs/superpowers/plans/2026-09-26-lab-platform.md`):
+  - [x] Task 1: test config, `@lab` alias, slug rules, metadata
+  - [ ] Task 2: URL helpers + project registry
+  - [ ] Task 3: API helpers
+  - [ ] Task 4: KV + rate limiting
+  - [ ] Task 5: isolation checker
+  - [ ] Task 6: BaseLayout options + LabLayout
+  - [ ] Task 7: /lab index, nav, terminal
+  - [ ] Task 8: templates + `npm run new`
+  - [ ] Task 9: subdomain rewrite
+  - [ ] Task 10: `/lab/hello` starter project
+  - [ ] Task 11: docs + preview deploy
+  - [ ] Task 12: production smoke test
