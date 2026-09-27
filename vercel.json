@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/:path((?!_astro/|lab/|favicon\\.svg).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacjdessert\\.dev"
+        }
+      ],
+      "destination": "/lab/:slug/:path"
+    }
+  ]
+}
