@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest run"
+    "test": "vitest run",
+    "new": "node scripts/new-lab.mjs"
   },
   "dependencies": {
     "@astrojs/tailwind": "^5.1.0",

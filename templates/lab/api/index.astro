@@ -1,0 +1,36 @@
+---
+import LabLayout from '@lab/LabLayout.astro';
+import { labUrl } from '@lab/url';
+---
+
+<LabLayout slug="__SLUG__">
+  <section class="max-w-3xl mx-auto px-6 py-12">
+    <h1 class="font-mono text-3xl font-bold text-accent-yellow">__TITLE__</h1>
+    <form id="echo-form" data-endpoint={labUrl('__SLUG__', 'api/example')} class="mt-6 flex gap-2">
+      <input
+        name="message"
+        required
+        maxlength="500"
+        placeholder="say something"
+        class="flex-1 bg-bg-surface text-text-primary font-mono px-3 py-2 rounded-sm"
+      />
+      <button class="font-mono px-4 py-2 bg-accent-yellow text-bg-primary rounded-sm">send</button>
+    </form>
+    <pre id="echo-output" class="mt-4 font-mono text-sm text-accent-green whitespace-pre-wrap"></pre>
+  </section>
+</LabLayout>
+
+<script>
+  const form = document.getElementById('echo-form') as HTMLFormElement;
+  const output = document.getElementById('echo-output') as HTMLPreElement;
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const res = await fetch(form.dataset.endpoint!, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: new FormData(form).get('message') }),
+    });
+    output.textContent = JSON.stringify(await res.json(), null, 2);
+  });
+</script>
