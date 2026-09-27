@@ -176,7 +176,7 @@ nightly rebuild). Next up: the "lab" system for shipping small projects at
 - Lab platform build (plan: `docs/superpowers/plans/2026-09-26-lab-platform.md`):
   - [x] Task 1: test config, `@lab` alias, slug rules, metadata
   - [x] Task 2: URL helpers + project registry
-  - [ ] Task 3: API helpers
+  - [x] Task 3: API helpers
   - [ ] Task 4: KV + rate limiting
   - [ ] Task 5: isolation checker
   - [ ] Task 6: BaseLayout options + LabLayout
