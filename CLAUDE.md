@@ -178,7 +178,7 @@ nightly rebuild). Next up: the "lab" system for shipping small projects at
   - [x] Task 2: URL helpers + project registry
   - [x] Task 3: API helpers
   - [x] Task 4: KV + rate limiting
-  - [ ] Task 5: isolation checker
+  - [x] Task 5: isolation checker
   - [ ] Task 6: BaseLayout options + LabLayout
   - [ ] Task 7: /lab index, nav, terminal
   - [ ] Task 8: templates + `npm run new`
