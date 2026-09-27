@@ -1,0 +1,33 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import LabCard from '@/components/LabCard.astro';
+import { projects, visibleProjects } from '@lab/registry';
+
+const list = visibleProjects(projects);
+---
+
+<BaseLayout title="Lab" description="Small experiments, toys, and tools Isaac has shipped.">
+  <section class="max-w-5xl mx-auto px-6 py-16">
+    <h1 class="font-mono text-4xl font-bold text-accent-yellow">
+      lab<span class="text-accent-green">/</span>
+    </h1>
+    <p class="mt-4 font-mono text-text-muted">Small experiments, toys, and tools. Some finished, some not.</p>
+
+    {list.length === 0 ? (
+      <p class="mt-12 font-mono text-text-muted">Nothing in the lab yet.</p>
+    ) : (
+      <div class="mt-12 grid gap-6 md:grid-cols-2">
+        {list.map((p) => (
+          <LabCard
+            href={`/lab/${p.slug}/`}
+            title={p.title}
+            description={p.description}
+            date={p.date}
+            tags={p.tags}
+            status={p.status}
+          />
+        ))}
+      </div>
+    )}
+  </section>
+</BaseLayout>

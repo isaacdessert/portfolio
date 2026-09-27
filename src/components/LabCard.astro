@@ -1,0 +1,34 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  date: string;
+  tags: string[];
+  status: 'live' | 'wip' | 'unlisted';
+}
+
+const { href, title, description, date, tags, status } = Astro.props;
+const shown = new Date(`${date}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+---
+
+<a
+  href={href}
+  class="group block bg-bg-surface border border-bg-surface hover:border-accent-yellow transition-colors duration-200 p-6 rounded-sm"
+>
+  <div class="flex items-start justify-between gap-4">
+    <h2 class="font-mono text-lg font-semibold text-text-primary group-hover:text-accent-yellow transition-colors">
+      {title}
+    </h2>
+    {status === 'wip' && (
+      <span class="font-mono text-xs px-2 py-0.5 border border-accent-green text-accent-green rounded-sm shrink-0">
+        wip
+      </span>
+    )}
+  </div>
+  <p class="mt-2 text-sm text-text-muted">{description}</p>
+  <div class="mt-4 flex flex-wrap items-center gap-3 font-mono text-xs">
+    <time datetime={date} class="text-text-muted">{shown}</time>
+    {tags.map((tag) => <span class="text-accent-green">#{tag}</span>)}
+  </div>
+</a>
