@@ -177,7 +177,7 @@ nightly rebuild). Next up: the "lab" system for shipping small projects at
   - [x] Task 1: test config, `@lab` alias, slug rules, metadata
   - [x] Task 2: URL helpers + project registry
   - [x] Task 3: API helpers
-  - [ ] Task 4: KV + rate limiting
+  - [x] Task 4: KV + rate limiting
   - [ ] Task 5: isolation checker
   - [ ] Task 6: BaseLayout options + LabLayout
   - [ ] Task 7: /lab index, nav, terminal
