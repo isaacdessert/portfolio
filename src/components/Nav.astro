@@ -1,4 +1,11 @@
 ---
+interface Props {
+  /** Make every link absolute to the site origin (needed on lab subdomains). */
+  absoluteLinks?: boolean;
+}
+
+const { absoluteLinks = false } = Astro.props;
+
 const navLinks = [
   { label: 'About', href: '/about' },
   { label: 'Projects', href: '/projects' },
@@ -7,11 +14,12 @@ const navLinks = [
 ];
 
 const currentPath = Astro.url.pathname;
+const linkTo = (path: string) => (absoluteLinks ? new URL(path, Astro.site).href : path);
 ---
 
 <nav class="fixed top-0 left-0 right-0 z-50 bg-bg-primary/90 backdrop-blur-sm border-b border-bg-surface">
   <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-    <a href="/" class="font-mono font-semibold text-accent-yellow hover:text-white transition-colors">
+    <a href={linkTo('/')} class="font-mono font-semibold text-accent-yellow hover:text-white transition-colors">
       id<span class="text-accent-green">.</span>dev
     </a>
 
@@ -20,7 +28,7 @@ const currentPath = Astro.url.pathname;
       {navLinks.map(link => (
         <li>
           <a
-            href={link.href}
+            href={linkTo(link.href)}
             class:list={[
               'font-mono text-sm transition-colors hover:text-accent-yellow',
               currentPath.startsWith(link.href)
@@ -55,7 +63,7 @@ const currentPath = Astro.url.pathname;
       {navLinks.map(link => (
         <li>
           <a
-            href={link.href}
+            href={linkTo(link.href)}
             class:list={[
               'font-mono text-sm transition-colors hover:text-accent-yellow block',
               currentPath.startsWith(link.href)

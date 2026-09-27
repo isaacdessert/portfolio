@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getProject } from './registry';
+import { siteUrl } from './url';
+
+interface Props {
+  slug: string;
+  title?: string;
+  description?: string;
+  /** Hide nav/footer and give the page the whole viewport (games, canvases). */
+  fullscreen?: boolean;
+}
+
+const { slug, title, description, fullscreen = false } = Astro.props;
+const project = getProject(slug);
+const labIndex = siteUrl('/lab');
+---
+
+<BaseLayout
+  title={title ?? project.title}
+  description={description ?? project.description}
+  absoluteLinks
+  noindex={project.status === 'unlisted'}
+  bare={fullscreen}
+>
+  {fullscreen ? (
+    <a
+      href={labIndex}
+      class="fixed top-3 left-3 z-50 font-mono text-xs px-2 py-1 rounded-sm bg-bg-surface/80 text-text-muted hover:text-accent-yellow transition-colors"
+    >
+      ← lab
+    </a>
+  ) : (
+    <div class="max-w-5xl mx-auto px-6 pt-8">
+      <a href={labIndex} class="font-mono text-sm text-text-muted hover:text-accent-yellow transition-colors">
+        ← lab
+      </a>
+    </div>
+  )}
+  <slot />
+</BaseLayout>

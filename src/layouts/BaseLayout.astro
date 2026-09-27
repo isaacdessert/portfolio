@@ -7,12 +7,21 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  /** Absolute nav links (for pages served on lab subdomains). */
+  absoluteLinks?: boolean;
+  /** Emit <meta name="robots" content="noindex">. */
+  noindex?: boolean;
+  /** No nav/footer/top padding — full-viewport pages. */
+  bare?: boolean;
 }
 
 const {
   title,
   description = 'Isaac Dessert — Lead Software Engineer. Personal site, blog, and portfolio.',
   ogImage = '/og-default.png',
+  absoluteLinks = false,
+  noindex = false,
+  bare = false,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -24,6 +33,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="canonical" href={canonicalURL} />
+    {noindex && <meta name="robots" content="noindex" />}
 
     <title>{title} | Isaac Dessert</title>
     <meta name="description" content={description} />
@@ -43,10 +53,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body class="min-h-screen flex flex-col">
-    <Nav />
-    <main class="flex-1 pt-16">
+    {!bare && <Nav absoluteLinks={absoluteLinks} />}
+    <main class:list={['flex-1', { 'pt-16': !bare }]}>
       <slot />
     </main>
-    <Footer />
+    {!bare && <Footer />}
   </body>
 </html>
