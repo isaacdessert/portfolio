@@ -68,6 +68,7 @@ git push -u origin lab/<slug>   # Vercel preview URL
 - `_`-prefixed files/dirs are ignored by the router (`_components/`, `_lib/`).
 - Endpoints: `api/<name>.ts` with `export const prerender = false`, wrapped in `handler()`.
   Validate input with `readBody(request, zodSchema)` (`import { z } from 'astro/zod'`).
+- Call endpoints with JSON (`content-type: application/json`). Bodiless or form POSTs get a 403 from Astro's origin check on Vercel.
 - Any endpoint that calls a paid API **must** call `rateLimit()` first.
 - `rateLimit()` keys on `x-forwarded-for`, which Vercel's edge sets; don't trust it if the site ever moves off Vercel.
 - State: `kv('<slug>')` — keys are auto-prefixed `lab:<slug>:`.
@@ -267,4 +268,5 @@ root-relative paths (`/about`, `/projects`, etc.).
   - [x] Task 9: subdomain rewrite
   - [x] Task 10: `/lab/hello` starter project
   - [x] Task 11: docs + preview deploy
+  - [x] Fix: hello counter POST sends JSON (Astro origin check 403 on Vercel)
   - [ ] Task 12: production smoke test

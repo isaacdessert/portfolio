@@ -24,7 +24,11 @@ import { labUrl } from '@lab/url';
   const endpoint = el.dataset.endpoint!;
 
   async function load() {
-    let res = await fetch(endpoint, { method: 'POST' });
+    let res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    });
     if (res.status === 429) {
       note.textContent = 'Slow down — showing the current count without adding to it.';
       res = await fetch(endpoint);
