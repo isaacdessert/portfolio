@@ -8,8 +8,37 @@ Built with Astro + Tailwind CSS, hosted on Vercel at https://isaacdessert.dev.
 ```bash
 npm install
 npm run dev       # http://localhost:4321/
-npm run build     # production build to dist/
+npm test          # vitest (unit tests + lab isolation check)
+npm run build     # isolation check → astro build → scripts/vercel-routes.mjs; output in .vercel/output/
 ```
+
+Local secrets: `vercel env pull .env --environment=preview` (the Development environment has no
+variables). If values come back as `[SENSITIVE]`, see "Secrets" below — Redis/Notion won't work
+locally until real values are in `.env`.
+
+### Ship a lab project (quick start)
+
+```bash
+git checkout -b lab/<slug>
+npm run new <slug>              # add `-- --api` for a rate-limited endpoint
+npm run dev                     # http://localhost:4321/lab/<slug>/
+git push -u origin lab/<slug>   # preview URL
+# merge to main → live at isaacdessert.dev/lab/<slug> and <slug>.isaacdessert.dev
+```
+
+Full details: "Shipping a Lab Project" below. Reference example: `src/pages/lab/hello/`.
+
+### Gotchas (learned the hard way)
+
+- The domain is **isaacdessert.dev** (no "j"). The email `isaacjdessert@gmail.com` does have one.
+  The origin lives in two places: `site` in `astro.config.mjs` and `SITE_ORIGIN` in `src/lab/url.ts`.
+- `vercel.json` `rewrites` do **not** work for subdomains here: the Astro adapter writes its own
+  `.vercel/output/config.json`, and rewrites run after static files anyway. The subdomain route is
+  inserted by `scripts/vercel-routes.mjs`; `vercel.json` only pins `buildCommand`.
+- Call lab endpoints with JSON (`content-type: application/json`). Astro's origin check returns 403
+  for bodiless/form POSTs on Vercel ("Cross-site POST form submissions are forbidden").
+- Subdomain misses fall back to the main site (no 404) — see "Subdomains".
+- Preview deployments are behind Vercel login; `vercel curl <path> --deployment <url>` works from the CLI.
 
 ## Deployment
 
@@ -271,18 +300,13 @@ root-relative paths (`/about`, `/projects`, etc.).
 - [x] Vercel: create Deploy Hook on `main`; save URL as GitHub secret `VERCEL_DEPLOY_HOOK`
 - [x] GitHub: disable Pages (Settings → Pages) once Vercel is confirmed serving the domain
 - [x] Lab system design — spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`
-- Lab platform build (plan: `docs/superpowers/plans/2026-09-26-lab-platform.md`):
-  - [x] Task 1: test config, `@lab` alias, slug rules, metadata
-  - [x] Task 2: URL helpers + project registry
-  - [x] Task 3: API helpers
-  - [x] Task 4: KV + rate limiting
-  - [x] Task 5: isolation checker
-  - [x] Task 6: BaseLayout options + LabLayout
-  - [x] Task 7: /lab index, nav, terminal
-  - [x] Task 8: templates + `npm run new`
-  - [x] Task 9: subdomain rewrite
-  - [x] Task 10: `/lab/hello` starter project
-  - [x] Task 11: docs + preview deploy
-  - [x] Fix: hello counter POST sends JSON (Astro origin check 403 on Vercel)
-  - [x] Final review fixes: subdomain route before filesystem, isolation in build, GET rate limit
-  - [x] Task 12: production smoke test
+- [x] Lab platform built and live (plan: `docs/superpowers/plans/2026-09-26-lab-platform.md`; tasks 1–12 + final-review fixes)
+
+**Open follow-ups:**
+- [ ] Set a monthly budget/cap in Upstash (and on any paid API before using it in a lab endpoint)
+- [ ] Local `.env` holds `[SENSITIVE]` placeholders for Redis/Notion — re-pull in a normal terminal or paste real values to use them in `npm run dev`
+- [ ] `public/og-default.png` doesn't exist but `BaseLayout` references it (link previews have no image)
+- [ ] Spec §9 still names `vercel-rewrites.test.ts`; it's now `scripts/vercel-routes.test.ts`
+- [ ] Optional: make unknown subdomains 404 instead of falling back to the main site
+- [ ] Optional: derive `SITE_ORIGIN` from one source instead of duplicating `astro.config.mjs` `site`
+- [ ] Optional: delete the merged `feat/lab-platform` branch (local + GitHub)
