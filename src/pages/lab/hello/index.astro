@@ -1,0 +1,42 @@
+---
+import LabLayout from '@lab/LabLayout.astro';
+import { labUrl } from '@lab/url';
+---
+
+<LabLayout slug="hello">
+  <section class="max-w-3xl mx-auto px-6 py-12">
+    <h1 class="font-mono text-3xl font-bold text-accent-yellow">Hello, Lab<span class="text-accent-green">.</span></h1>
+    <p class="mt-4 text-text-primary">
+      This page is static. The counter below comes from a serverless function backed by Redis —
+      the smallest end-to-end example of a lab project.
+    </p>
+    <p class="mt-8 font-mono text-text-muted">
+      visits:
+      <span id="visits" data-endpoint={labUrl('hello', 'api/visits')} class="text-accent-green text-2xl">…</span>
+    </p>
+    <p id="visits-note" class="mt-2 font-mono text-xs text-text-muted"></p>
+  </section>
+</LabLayout>
+
+<script>
+  const el = document.getElementById('visits') as HTMLSpanElement;
+  const note = document.getElementById('visits-note') as HTMLParagraphElement;
+  const endpoint = el.dataset.endpoint!;
+
+  async function load() {
+    let res = await fetch(endpoint, { method: 'POST' });
+    if (res.status === 429) {
+      note.textContent = 'Slow down — showing the current count without adding to it.';
+      res = await fetch(endpoint);
+    }
+    if (!res.ok) {
+      el.textContent = '?';
+      note.textContent = 'Counter unavailable right now.';
+      return;
+    }
+    const { visits } = await res.json();
+    el.textContent = String(visits);
+  }
+
+  load();
+</script>

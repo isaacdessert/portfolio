@@ -183,6 +183,6 @@ nightly rebuild). Next up: the "lab" system for shipping small projects at
   - [x] Task 7: /lab index, nav, terminal
   - [x] Task 8: templates + `npm run new`
   - [x] Task 9: subdomain rewrite
-  - [ ] Task 10: `/lab/hello` starter project
+  - [x] Task 10: `/lab/hello` starter project
   - [ ] Task 11: docs + preview deploy
   - [ ] Task 12: production smoke test
