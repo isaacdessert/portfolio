@@ -44,9 +44,9 @@ const toPosix = (p) => p.split(path.sep).join('/');
 /** Repo-relative target of an import, or null for npm packages / virtual modules. */
 function targetOf(root, file, spec) {
   if (spec.startsWith('.')) return toPosix(path.relative(root, path.resolve(path.dirname(file), spec)));
-  if (spec.startsWith('@lab/')) return SHARED + spec.slice('@lab/'.length);
-  if (spec.startsWith('@/')) return 'src/' + spec.slice(2);
-  if (spec.startsWith('/')) return spec.slice(1);
+  if (spec.startsWith('@lab/')) return path.posix.normalize(SHARED + spec.slice('@lab/'.length));
+  if (spec.startsWith('@/')) return path.posix.normalize('src/' + spec.slice(2));
+  if (spec.startsWith('/')) return path.posix.normalize(spec.slice(1));
   return null;
 }
 

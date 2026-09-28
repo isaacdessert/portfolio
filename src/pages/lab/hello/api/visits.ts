@@ -6,7 +6,8 @@ export const prerender = false;
 
 const store = kv('hello');
 
-export const GET = handler(async () => {
+export const GET = handler(async ({ request }) => {
+  await rateLimit(request, { slug: 'hello', id: 'read', limit: 60, window: '1 m' });
   return json({ visits: (await store.get<number>('visits')) ?? 0 });
 });
 

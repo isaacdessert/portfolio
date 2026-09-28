@@ -234,27 +234,30 @@ Set in Vercel → Environment Variables (Production + Preview). Local dev:
 
 - Vercel: add domain `*.isaacdessert.dev` (DNS is on Vercel; wildcard cert is
   automatic). Explicit domains (apex, `www`) take precedence.
-- `vercel.json`:
+- `scripts/vercel-routes.mjs` inserts this route object into
+  `.vercel/output/config.json` immediately before `{ "handle": "filesystem" }`,
+  after `astro build` (see `package.json`'s `build` script). This has to happen
+  post-build, before the filesystem check: `vercel.json` `rewrites` are placed
+  *after* `{ handle: "filesystem" }`, so a static route (e.g. the homepage)
+  would win before the rewrite ever ran, and the `@astrojs/vercel` adapter
+  writes `config.json` itself without merging in `vercel.json` rewrites.
+  `vercel.json` itself only pins `buildCommand` so Vercel actually runs that
+  build script.
 
 ```json
 {
-  "rewrites": [
-    {
-      "source": "/:path((?!_astro/|lab/|favicon\\.svg).*)",
-      "has": [{ "type": "host", "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev" }],
-      "destination": "/lab/:slug/:path"
-    }
-  ]
+  "src": "^/((?!_astro/|_image|_server-islands/|_vercel/|lab/|favicon\\.svg).*)$",
+  "has": [{ "type": "host", "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev" }],
+  "dest": "/lab/$slug/$1"
 }
 ```
 
 - Every project gets a subdomain automatically. Unknown subdomains → 404.
 - **URL convention:** inside a project, always use absolute `/lab/<slug>/…`
-  paths via `labUrl(slug, path)`; never relative (`./api/x`). `/lab/` and
-  `/_astro/` are excluded from the rewrite so these work on both hosts.
+  paths via `labUrl(slug, path)`; never relative (`./api/x`). `/_astro/`,
+  `/_image`, `/_server-islands/`, `/_vercel/`, `/lab/`, and `/favicon.svg` are
+  excluded from the rewrite so these work on both hosts.
 - Subdomains only work in production; previews and `npm run dev` use paths.
-- Exact `vercel.json` regex syntax (named groups, lookaheads) must be verified
-  against Vercel docs during implementation and via the post-deploy smoke test.
 
 ## 8. Scaffold and starter project
 

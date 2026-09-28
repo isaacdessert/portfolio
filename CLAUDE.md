@@ -31,7 +31,9 @@ set for both Production and Preview.
 `output: 'static'` + `@astrojs/vercel` adapter (v8 — v9+ requires newer Astro).
 Everything is prerendered to static HTML by default. A page or endpoint that
 declares `export const prerender = false` is deployed as a Vercel serverless
-function instead.
+function instead. `vercel.json` only pins `buildCommand`; routing comes from the
+adapter's own `.vercel/output/config.json` plus `scripts/vercel-routes.mjs` (see
+Subdomains below).
 
 ## Shipping a Lab Project
 
@@ -52,7 +54,7 @@ git push -u origin lab/<slug>   # Vercel preview URL
 `_meta.ts` `status`: `wip` (listed with badge), `live`, `unlisted` (reachable, hidden, noindex).
 `src/pages/lab/hello/` is the reference example.
 
-### Isolation rules (enforced by `npm test`)
+### Isolation rules (enforced by `npm test` and by `npm run build`, so violations fail the deploy)
 
 - A project (`src/pages/lab/<slug>/`) imports only from its own folder, `@lab/*`, or npm packages.
 - Shared code lives in `src/lab/` (`@lab/*`): `meta`, `registry`, `url`, `api`, `kv`, `rateLimit`, `LabLayout.astro`.
@@ -65,6 +67,7 @@ git push -u origin lab/<slug>   # Vercel preview URL
 - Wrap pages in `LabLayout` (`fullscreen` for games/canvases).
 - Link inside a project with `labUrl(slug, path)` → `/lab/<slug>/...`. Never relative `./api/x`
   (it breaks on subdomains).
+- Links built with `siteUrl()` and the nav on lab pages point at production, even on preview deployments.
 - `_`-prefixed files/dirs are ignored by the router (`_components/`, `_lib/`).
 - Endpoints: `api/<name>.ts` with `export const prerender = false`, wrapped in `handler()`.
   Validate input with `readBody(request, zodSchema)` (`import { z } from 'astro/zod'`).
@@ -80,6 +83,7 @@ git push -u origin lab/<slug>   # Vercel preview URL
 - Project-specific: prefix with the slug in UPPER_SNAKE (`PIXEL_GARDEN_API_KEY`); read with `requireEnv()`.
 - Shared (intentional): `KV_REST_API_URL`, `KV_REST_API_TOKEN` (Upstash), `ANTHROPIC_API_KEY` when added.
 - Set a monthly spend cap in each paid API's console.
+- Set a monthly budget/cap in Upstash too; rate limiting spends Redis commands even when it rejects.
 
 ### Adding storage
 
@@ -89,8 +93,14 @@ git push -u origin lab/<slug>   # Vercel preview URL
 
 ### Subdomains
 
-`vercel.json` rewrites `<slug>.isaacdessert.dev/*` → `/lab/<slug>/*` (production only; `/_astro/`,
-`/lab/`, `/favicon.svg` pass through). The wildcard domain is configured in Vercel → Domains.
+`scripts/vercel-routes.mjs` inserts the `<slug>.isaacdessert.dev/*` → `/lab/<slug>/*` route into
+`.vercel/output/config.json` immediately before the `{ handle: "filesystem" }` entry (run by
+`npm run build`; `vercel.json` pins `buildCommand` so Vercel actually runs that build script).
+Plain `vercel.json` `rewrites` can't do this because they're placed after the filesystem check, so a
+static route like the homepage would win before the rewrite ever ran. Passthrough prefixes (excluded
+from the rewrite so they work identically on both hosts): `/_astro/`, `/_image`, `/_server-islands/`,
+`/_vercel/`, `/lab/`, `/favicon.svg`. Production only; the wildcard domain is configured in
+Vercel → Domains.
 
 ### Graduating a project
 
@@ -159,7 +169,8 @@ src/
     └── global.css          # Base styles, shared component classes
 scripts/
 ├── new-lab.mjs             # Create new lab project
-└── lab-isolation.mjs       # Isolation checker
+├── lab-isolation.mjs       # Isolation checker
+└── vercel-routes.mjs       # Inserts subdomain route before filesystem (runs in `npm run build`)
 templates/
 └── lab/                    # Lab project templates (basic, api)
 ```
@@ -169,7 +180,7 @@ templates/
 - `astro.config.mjs` — site URL, base path (`/`), integrations
 - `tailwind.config.mjs` — color tokens, typography plugin config
 - `tsconfig.json` — TypeScript config with `@/*` path alias for `src/`
-- `vercel.json` — subdomain rewrites for lab projects
+- `vercel.json` — only pins `buildCommand`; routes come from the adapter plus `scripts/vercel-routes.mjs`
 - `templates/lab/` — lab project templates (basic, api)
 
 ## Blog Posts
@@ -269,4 +280,5 @@ root-relative paths (`/about`, `/projects`, etc.).
   - [x] Task 10: `/lab/hello` starter project
   - [x] Task 11: docs + preview deploy
   - [x] Fix: hello counter POST sends JSON (Astro origin check 403 on Vercel)
+  - [x] Final review fixes: subdomain route before filesystem, isolation in build, GET rate limit
   - [ ] Task 12: production smoke test

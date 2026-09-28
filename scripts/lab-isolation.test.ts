@@ -62,6 +62,24 @@ describe('findViolations', () => {
     ]);
   });
 
+  it('flags a project file that escapes via @lab/../ back into portfolio code', async () => {
+    const root = await repo({
+      'src/pages/lab/a/index.astro': `---\nimport Nav from '@lab/../components/Nav.astro';\n---`,
+    });
+    expect(await findViolations(root)).toEqual([
+      expect.objectContaining({ file: 'src/pages/lab/a/index.astro', import: '@lab/../components/Nav.astro' }),
+    ]);
+  });
+
+  it('flags a src/lab file that escapes via @lab/../ into a project', async () => {
+    const root = await repo({
+      'src/lab/bad.ts': `import m from '@lab/../pages/lab/a/_meta';`,
+    });
+    expect(await findViolations(root)).toEqual([
+      expect.objectContaining({ file: 'src/lab/bad.ts', import: '@lab/../pages/lab/a/_meta' }),
+    ]);
+  });
+
   it('flags portfolio imports from a project', async () => {
     const root = await repo({
       'src/pages/lab/a/index.astro': `---\nimport Nav from '@/components/Nav.astro';\n---`,

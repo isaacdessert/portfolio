@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "vitest run scripts/lab-isolation.test.ts && astro build && node scripts/vercel-routes.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",

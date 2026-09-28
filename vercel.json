@@ -1,15 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/:path((?!_astro/|lab/|favicon\\.svg).*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev"
-        }
-      ],
-      "destination": "/lab/:slug/:path"
-    }
-  ]
+  "buildCommand": "npm run build"
 }
