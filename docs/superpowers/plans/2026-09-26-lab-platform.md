@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let Isaac ship small, isolated projects to `isaacjdessert.dev/lab/<slug>` (and `<slug>.isaacjdessert.dev`) with `npm run new <slug>`, some code, and `git push`.
+**Goal:** Let Isaac ship small, isolated projects to `isaacdessert.dev/lab/<slug>` (and `<slug>.isaacdessert.dev`) with `npm run new <slug>`, some code, and `git push`.
 
 **Architecture:** Each project is one folder under `src/pages/lab/<slug>/` (pages, `_meta.ts`, optional `api/` serverless endpoints). All intentionally shared code lives in `src/lab/` (alias `@lab/*`); an automated test forbids any other cross-imports. Subdomains are a host-based rewrite in `vercel.json`. Upstash Redis (namespaced per project) backs rate limiting and small KV state.
 
@@ -20,7 +20,7 @@
 - Never put `*.test.ts` files under `src/pages/` (Astro would route them as endpoints).
 - Colors: use existing Tailwind tokens (`bg-bg-primary`, `bg-bg-surface`, `text-accent-yellow`, `text-accent-green`, `text-text-primary`, `text-text-muted`), `font-mono` for UI chrome.
 - Slug rules: `^[a-z0-9]+(-[a-z0-9]+)*$`, ≤40 chars, not `www` / `api` / `lab`.
-- Site origin: `https://isaacjdessert.dev`.
+- Site origin: `https://isaacdessert.dev`.
 - Redis env: `KV_REST_API_URL` / `KV_REST_API_TOKEN`, falling back to `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
 - KV keys prefixed `lab:<slug>:`; rate-limit prefix `lab:<slug>:rl:<id>`.
 - Every commit also updates the "Status & TODOs" section of `CLAUDE.md` (tick the finished item). Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -250,7 +250,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: `LabMeta` from `./meta`; `slugError` from `./slug-rules.mjs`
 - Produces:
-  - `SITE_ORIGIN = 'https://isaacjdessert.dev'`, `siteUrl(path: string): string`, `labUrl(slug: string, path?: string): string` from `src/lab/url.ts`
+  - `SITE_ORIGIN = 'https://isaacdessert.dev'`, `siteUrl(path: string): string`, `labUrl(slug: string, path?: string): string` from `src/lab/url.ts`
   - `interface LabProject extends LabMeta { slug: string }`, `buildRegistry(metaModules: Record<string, { default: LabMeta }>, indexPaths: string[]): LabProject[]`, `visibleProjects(projects: LabProject[]): LabProject[]`, `projects: LabProject[]`, `getProject(slug: string): LabProject` from `src/lab/registry.ts`
 
 - [ ] **Step 1: Write failing tests**
@@ -262,10 +262,10 @@ import { SITE_ORIGIN, siteUrl, labUrl } from './url';
 
 describe('siteUrl', () => {
   it('builds absolute URLs on the site origin', () => {
-    expect(SITE_ORIGIN).toBe('https://isaacjdessert.dev');
-    expect(siteUrl('/about')).toBe('https://isaacjdessert.dev/about');
-    expect(siteUrl('/')).toBe('https://isaacjdessert.dev/');
-    expect(siteUrl('lab')).toBe('https://isaacjdessert.dev/lab');
+    expect(SITE_ORIGIN).toBe('https://isaacdessert.dev');
+    expect(siteUrl('/about')).toBe('https://isaacdessert.dev/about');
+    expect(siteUrl('/')).toBe('https://isaacdessert.dev/');
+    expect(siteUrl('lab')).toBe('https://isaacdessert.dev/lab');
   });
 });
 
@@ -357,7 +357,7 @@ Expected: FAIL — modules not found.
 
 `src/lab/url.ts`:
 ```ts
-export const SITE_ORIGIN = 'https://isaacjdessert.dev';
+export const SITE_ORIGIN = 'https://isaacdessert.dev';
 
 /** Absolute URL on the main site. Use for links that must work from a subdomain. */
 export function siteUrl(path: string): string {
@@ -367,7 +367,7 @@ export function siteUrl(path: string): string {
 /**
  * Root-relative URL inside a lab project. Always use this (never "./api/x"):
  * `/lab/...` paths are excluded from the subdomain rewrite, so they work on
- * both isaacjdessert.dev/lab/<slug> and <slug>.isaacjdessert.dev.
+ * both isaacdessert.dev/lab/<slug> and <slug>.isaacdessert.dev.
  */
 export function labUrl(slug: string, path = ''): string {
   return `/lab/${slug}/${path.replace(/^\/+/, '')}`;
@@ -1767,7 +1767,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Modify: `CLAUDE.md`
 
 **Interfaces:**
-- Produces: `vercel.json` with one host-based rewrite (`<slug>.isaacjdessert.dev/<path>` → `/lab/<slug>/<path>`, excluding `/_astro/`, `/lab/`, `/favicon.svg`, and `www`)
+- Produces: `vercel.json` with one host-based rewrite (`<slug>.isaacdessert.dev/<path>` → `/lab/<slug>/<path>`, excluding `/_astro/`, `/lab/`, `/favicon.svg`, and `www`)
 
 - [ ] **Step 1: Write failing test** — `scripts/vercel-rewrites.test.ts`
 
@@ -1797,20 +1797,20 @@ describe('vercel.json subdomain rewrite', () => {
   });
 
   it.each([
-    ['hello.isaacjdessert.dev', '/', '/lab/hello/'],
-    ['hello.isaacjdessert.dev', '/about', '/lab/hello/about'],
-    ['pixel-garden.isaacjdessert.dev', '/a/b', '/lab/pixel-garden/a/b'],
+    ['hello.isaacdessert.dev', '/', '/lab/hello/'],
+    ['hello.isaacdessert.dev', '/about', '/lab/hello/about'],
+    ['pixel-garden.isaacdessert.dev', '/a/b', '/lab/pixel-garden/a/b'],
   ])('%s%s → %s', (host, p, expected) => {
     expect(rewrite(host, p)).toBe(expected);
   });
 
   it.each([
-    ['isaacjdessert.dev', '/'],
-    ['www.isaacjdessert.dev', '/'],
-    ['a.b.isaacjdessert.dev', '/'],
-    ['hello.isaacjdessert.dev', '/_astro/index.abc123.js'],
-    ['hello.isaacjdessert.dev', '/lab/hello/api/visits'],
-    ['hello.isaacjdessert.dev', '/favicon.svg'],
+    ['isaacdessert.dev', '/'],
+    ['www.isaacdessert.dev', '/'],
+    ['a.b.isaacdessert.dev', '/'],
+    ['hello.isaacdessert.dev', '/_astro/index.abc123.js'],
+    ['hello.isaacdessert.dev', '/lab/hello/api/visits'],
+    ['hello.isaacdessert.dev', '/favicon.svg'],
     ['hello.example.com', '/'],
   ])('does not rewrite %s%s', (host, p) => {
     expect(rewrite(host, p)).toBeNull();
@@ -1834,7 +1834,7 @@ Expected: FAIL — `vercel.json` not found.
       "has": [
         {
           "type": "host",
-          "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacjdessert\\.dev"
+          "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev"
         }
       ],
       "destination": "/lab/:slug/:path"
@@ -1854,7 +1854,7 @@ Expected: PASS; build succeeds.
 
 ```bash
 git add vercel.json scripts/vercel-rewrites.test.ts CLAUDE.md
-git commit -m "feat(lab): subdomain rewrite <slug>.isaacjdessert.dev → /lab/<slug>
+git commit -m "feat(lab): subdomain rewrite <slug>.isaacdessert.dev → /lab/<slug>
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
@@ -1873,7 +1873,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Produces: `GET /lab/hello/api/visits` → `{ visits: number }`; `POST /lab/hello/api/visits` → `{ visits: number }` (increments, 10/min per IP)
 
 - [ ] **Step 1: User checkpoint — pause and ask Isaac to finish setup** (the controller relays this; do not continue until confirmed):
-  1. Vercel → portfolio project → Settings → Domains → add `*.isaacjdessert.dev`.
+  1. Vercel → portfolio project → Settings → Domains → add `*.isaacdessert.dev`.
   2. Vercel → Storage / Marketplace → Upstash for Redis → create a database and connect it to the portfolio project for Production and Preview.
   3. Locally: `npm i -g vercel && vercel link && vercel env pull .env`.
   Then check which Redis variable names landed: `grep -oE '^(KV|UPSTASH)[A-Z_]*' .env`. Expected: `KV_REST_API_URL` and `KV_REST_API_TOKEN`, or the `UPSTASH_REDIS_REST_*` pair. If neither pair is there, stop and report.
@@ -2003,7 +2003,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ````markdown
 ## Shipping a Lab Project
 
-Small projects live at `isaacjdessert.dev/lab/<slug>` and `<slug>.isaacjdessert.dev`.
+Small projects live at `isaacdessert.dev/lab/<slug>` and `<slug>.isaacdessert.dev`.
 Spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`.
 
 ### Workflow
@@ -2054,13 +2054,13 @@ git push -u origin lab/<slug>   # Vercel preview URL
 
 ### Subdomains
 
-`vercel.json` rewrites `<slug>.isaacjdessert.dev/*` → `/lab/<slug>/*` (production only; `/_astro/`,
+`vercel.json` rewrites `<slug>.isaacdessert.dev/*` → `/lab/<slug>/*` (production only; `/_astro/`,
 `/lab/`, `/favicon.svg` pass through). The wildcard domain is configured in Vercel → Domains.
 
 ### Graduating a project
 
 When a project needs its own dependencies, runtime (WebSockets → Fly.io), or it just gets big: move it
-to its own repo and Vercel project, add `<slug>.isaacjdessert.dev` as an explicit domain there (explicit
+to its own repo and Vercel project, add `<slug>.isaacdessert.dev` as an explicit domain there (explicit
 beats wildcard), and delete the lab folder.
 ````
 
@@ -2097,17 +2097,17 @@ git checkout main && git pull --ff-only && git merge --ff-only feat/lab-platform
 - [ ] **Step 3: Smoke test**
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" https://isaacjdessert.dev/lab/                      # 200
-curl -s https://isaacjdessert.dev/lab/hello/ | grep -c "Hello, Lab"                          # ≥1
-curl -s -X POST https://isaacjdessert.dev/lab/hello/api/visits                               # {"visits":N}
-curl -s https://hello.isaacjdessert.dev/ | grep -c "Hello, Lab"                              # ≥1 (rewrite works)
-curl -s -o /dev/null -w "%{http_code}\n" https://hello.isaacjdessert.dev/_astro/ 2>/dev/null # not rewritten (404 is fine)
-curl -s -X POST https://hello.isaacjdessert.dev/lab/hello/api/visits                         # {"visits":N+1}
-curl -s -o /dev/null -w "%{http_code}\n" https://nope.isaacjdessert.dev/                     # 404
-curl -s -o /dev/null -w "%{http_code}\n" https://www.isaacjdessert.dev/                      # 200 or 30x (not a lab 404)
+curl -s -o /dev/null -w "%{http_code}\n" https://isaacdessert.dev/lab/                      # 200
+curl -s https://isaacdessert.dev/lab/hello/ | grep -c "Hello, Lab"                          # ≥1
+curl -s -X POST https://isaacdessert.dev/lab/hello/api/visits                               # {"visits":N}
+curl -s https://hello.isaacdessert.dev/ | grep -c "Hello, Lab"                              # ≥1 (rewrite works)
+curl -s -o /dev/null -w "%{http_code}\n" https://hello.isaacdessert.dev/_astro/ 2>/dev/null # not rewritten (404 is fine)
+curl -s -X POST https://hello.isaacdessert.dev/lab/hello/api/visits                         # {"visits":N+1}
+curl -s -o /dev/null -w "%{http_code}\n" https://nope.isaacdessert.dev/                     # 404
+curl -s -o /dev/null -w "%{http_code}\n" https://www.isaacdessert.dev/                      # 200 or 30x (not a lab 404)
 ```
 If the network is sandboxed, ask Isaac to run these with `! <command>`.
 
-**If the subdomain rewrite doesn't apply** (hello.isaacjdessert.dev shows the homepage or a 404): Vercel may not honor `vercel.json` rewrites alongside the adapter's Build Output. Fallback: set `edgeMiddleware: true` in the adapter config and add an Astro middleware at `src/middleware.ts` that reads the `host` header and rewrites with `context.rewrite('/lab/<slug>/<path>')`, using the same exclusions. Report back to the controller before implementing it — it needs its own review.
+**If the subdomain rewrite doesn't apply** (hello.isaacdessert.dev shows the homepage or a 404): Vercel may not honor `vercel.json` rewrites alongside the adapter's Build Output. Fallback: set `edgeMiddleware: true` in the adapter config and add an Astro middleware at `src/middleware.ts` that reads the `host` header and rewrites with `context.rewrite('/lab/<slug>/<path>')`, using the same exclusions. Report back to the controller before implementing it — it needs its own review.
 
 - [ ] **Step 4: Update CLAUDE.md** — Status: "Lab platform live." Tick Task 12. Commit on a branch, merge with Isaac's OK.

@@ -2,13 +2,13 @@
 
 **Date:** 2026-09-26
 **Status:** Approved in brainstorm, pending spec review
-**Repo:** `isaacdessert/portfolio` (Astro 5, hosted on Vercel at `isaacjdessert.dev`)
+**Repo:** `isaacdessert/portfolio` (Astro 5, hosted on Vercel at `isaacdessert.dev`)
 
 ## Goal
 
 Make it possible to sit down for a few hours, build a small frontend toy or
-light-backend project, and ship it to `isaacjdessert.dev/lab/<slug>` (and
-`<slug>.isaacjdessert.dev`) with nothing more than `npm run new <slug>`,
+light-backend project, and ship it to `isaacdessert.dev/lab/<slug>` (and
+`<slug>.isaacdessert.dev`) with nothing more than `npm run new <slug>`,
 some code, and `git push`.
 
 ### In scope
@@ -170,9 +170,9 @@ export default defineLab({
 - Wraps `BaseLayout` (nav/footer) with a slim "← lab" link above content.
 - `fullscreen` renders a bare viewport (no nav/footer) with a small floating
   "← lab" link.
-- All links back to the portfolio use absolute `https://isaacjdessert.dev/...`
+- All links back to the portfolio use absolute `https://isaacdessert.dev/...`
   URLs (`siteUrl()`), so they work from subdomains.
-- Canonical URL always `https://isaacjdessert.dev/lab/<slug>/…`.
+- Canonical URL always `https://isaacdessert.dev/lab/<slug>/…`.
 - `unlisted` status adds `noindex`.
 
 Note: `BaseLayout`'s nav uses root-relative links. On a subdomain those would
@@ -232,7 +232,7 @@ Set in Vercel → Environment Variables (Production + Preview). Local dev:
 
 ## 7. Subdomain routing
 
-- Vercel: add domain `*.isaacjdessert.dev` (DNS is on Vercel; wildcard cert is
+- Vercel: add domain `*.isaacdessert.dev` (DNS is on Vercel; wildcard cert is
   automatic). Explicit domains (apex, `www`) take precedence.
 - `vercel.json`:
 
@@ -241,7 +241,7 @@ Set in Vercel → Environment Variables (Production + Preview). Local dev:
   "rewrites": [
     {
       "source": "/:path((?!_astro/|lab/|favicon\\.svg).*)",
-      "has": [{ "type": "host", "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacjdessert\\.dev" }],
+      "has": [{ "type": "host", "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev" }],
       "destination": "/lab/:slug/:path"
     }
   ]
@@ -293,13 +293,13 @@ Vitest (`npm test`):
   replaced, invalid/duplicate slug rejected.
 
 Manual/post-deploy: `npm run build` passes; preview URL renders `/lab` and
-`/lab/hello`; after merge, curl `https://hello.isaacjdessert.dev/` (200, hello
-page), `https://hello.isaacjdessert.dev/lab/hello/api/visits` (POST → count),
-`https://nope.isaacjdessert.dev/` (404).
+`/lab/hello`; after merge, curl `https://hello.isaacdessert.dev/` (200, hello
+page), `https://hello.isaacdessert.dev/lab/hello/api/visits` (POST → count),
+`https://nope.isaacdessert.dev/` (404).
 
 ## 10. User setup steps (during implementation)
 
-1. Vercel → Domains → add `*.isaacjdessert.dev`.
+1. Vercel → Domains → add `*.isaacdessert.dev`.
 2. Vercel Marketplace → Upstash Redis → create + connect to the project
    (Production + Preview).
 3. Locally: `npm i -g vercel && vercel link && vercel env pull .env`.

@@ -21,20 +21,20 @@ describe('vercel.json subdomain rewrite', () => {
   });
 
   it.each([
-    ['hello.isaacjdessert.dev', '/', '/lab/hello/'],
-    ['hello.isaacjdessert.dev', '/about', '/lab/hello/about'],
-    ['pixel-garden.isaacjdessert.dev', '/a/b', '/lab/pixel-garden/a/b'],
+    ['hello.isaacdessert.dev', '/', '/lab/hello/'],
+    ['hello.isaacdessert.dev', '/about', '/lab/hello/about'],
+    ['pixel-garden.isaacdessert.dev', '/a/b', '/lab/pixel-garden/a/b'],
   ])('%s%s → %s', (host, p, expected) => {
     expect(rewrite(host, p)).toBe(expected);
   });
 
   it.each([
-    ['isaacjdessert.dev', '/'],
-    ['www.isaacjdessert.dev', '/'],
-    ['a.b.isaacjdessert.dev', '/'],
-    ['hello.isaacjdessert.dev', '/_astro/index.abc123.js'],
-    ['hello.isaacjdessert.dev', '/lab/hello/api/visits'],
-    ['hello.isaacjdessert.dev', '/favicon.svg'],
+    ['isaacdessert.dev', '/'],
+    ['www.isaacdessert.dev', '/'],
+    ['a.b.isaacdessert.dev', '/'],
+    ['hello.isaacdessert.dev', '/_astro/index.abc123.js'],
+    ['hello.isaacdessert.dev', '/lab/hello/api/visits'],
+    ['hello.isaacdessert.dev', '/favicon.svg'],
     ['hello.example.com', '/'],
   ])('does not rewrite %s%s', (host, p) => {
     expect(rewrite(host, p)).toBeNull();

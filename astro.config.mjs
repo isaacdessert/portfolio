@@ -3,7 +3,7 @@ import tailwind from '@astrojs/tailwind';
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  site: 'https://isaacjdessert.dev',
+  site: 'https://isaacdessert.dev',
   base: '/',
   integrations: [tailwind()],
   // Static by default. Any page or endpoint that exports

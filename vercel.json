@@ -6,7 +6,7 @@
       "has": [
         {
           "type": "host",
-          "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacjdessert\\.dev"
+          "value": "(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev"
         }
       ],
       "destination": "/lab/:slug/:path"

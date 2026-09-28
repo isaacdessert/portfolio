@@ -1,7 +1,7 @@
 # Portfolio Site — Claude Context
 
 Personal portfolio site for Isaac Dessert (Lead Software Engineer).
-Built with Astro + Tailwind CSS, hosted on Vercel at https://isaacjdessert.dev.
+Built with Astro + Tailwind CSS, hosted on Vercel at https://isaacdessert.dev.
 
 ## Local Development
 
@@ -13,7 +13,7 @@ npm run build     # production build to dist/
 
 ## Deployment
 
-Vercel Git integration: push to `main` → production deploy to isaacjdessert.dev.
+Vercel Git integration: push to `main` → production deploy to isaacdessert.dev.
 Any other branch / PR → preview deploy with its own URL.
 
 Nightly rebuild at midnight US Central fetches new Notion posts:
@@ -35,7 +35,7 @@ function instead.
 
 ## Shipping a Lab Project
 
-Small projects live at `isaacjdessert.dev/lab/<slug>` and `<slug>.isaacjdessert.dev`.
+Small projects live at `isaacdessert.dev/lab/<slug>` and `<slug>.isaacdessert.dev`.
 Spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`.
 
 ### Workflow
@@ -88,13 +88,13 @@ git push -u origin lab/<slug>   # Vercel preview URL
 
 ### Subdomains
 
-`vercel.json` rewrites `<slug>.isaacjdessert.dev/*` → `/lab/<slug>/*` (production only; `/_astro/`,
+`vercel.json` rewrites `<slug>.isaacdessert.dev/*` → `/lab/<slug>/*` (production only; `/_astro/`,
 `/lab/`, `/favicon.svg` pass through). The wildcard domain is configured in Vercel → Domains.
 
 ### Graduating a project
 
 When a project needs its own dependencies, runtime (WebSockets → Fly.io), or it just gets big: move it
-to its own repo and Vercel project, add `<slug>.isaacjdessert.dev` as an explicit domain there (explicit
+to its own repo and Vercel project, add `<slug>.isaacdessert.dev` as an explicit domain there (explicit
 beats wildcard), and delete the lab folder.
 
 ## Tech Stack
@@ -249,6 +249,7 @@ root-relative paths (`/about`, `/projects`, etc.).
 **Status:** Lab platform built on `feat/lab-platform`; awaiting preview check and production smoke test.
 
 **TODOs:**
+- [x] Domain corrected to isaacdessert.dev (was mistakenly isaacjdessert.dev)
 - [x] Vercel: confirm project is Git-connected to `isaacdessert/portfolio` (auto-deploy `main`, previews on branches)
 - [x] Vercel: set `NOTION_TOKEN` / `NOTION_DATABASE_ID` for Production + Preview
 - [x] Vercel: create Deploy Hook on `main`; save URL as GitHub secret `VERCEL_DEPLOY_HOOK`

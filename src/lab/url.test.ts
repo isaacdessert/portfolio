@@ -3,10 +3,10 @@ import { SITE_ORIGIN, siteUrl, labUrl } from './url';
 
 describe('siteUrl', () => {
   it('builds absolute URLs on the site origin', () => {
-    expect(SITE_ORIGIN).toBe('https://isaacjdessert.dev');
-    expect(siteUrl('/about')).toBe('https://isaacjdessert.dev/about');
-    expect(siteUrl('/')).toBe('https://isaacjdessert.dev/');
-    expect(siteUrl('lab')).toBe('https://isaacjdessert.dev/lab');
+    expect(SITE_ORIGIN).toBe('https://isaacdessert.dev');
+    expect(siteUrl('/about')).toBe('https://isaacdessert.dev/about');
+    expect(siteUrl('/')).toBe('https://isaacdessert.dev/');
+    expect(siteUrl('lab')).toBe('https://isaacdessert.dev/lab');
   });
 });
 
