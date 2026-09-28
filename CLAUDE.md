@@ -102,6 +102,10 @@ from the rewrite so they work identically on both hosts): `/_astro/`, `/_image`,
 `/_vercel/`, `/lab/`, `/favicon.svg`. Production only; the wildcard domain is configured in
 Vercel → Domains.
 
+If the rewritten path doesn't exist, Vercel falls back to the original path: `nope.isaacdessert.dev/`
+shows the homepage and `hello.isaacdessert.dev/about` shows the About page (not a 404). Harmless —
+canonical URLs always point at the apex — but don't rely on subdomain 404s.
+
 ### Graduating a project
 
 When a project needs its own dependencies, runtime (WebSockets → Fly.io), or it just gets big: move it
@@ -258,7 +262,7 @@ root-relative paths (`/about`, `/projects`, etc.).
 
 ## Status & TODOs
 
-**Status:** Lab platform built on `feat/lab-platform`; awaiting preview check and production smoke test.
+**Status:** Lab platform live (merged 2026-09-28). `/lab/hello` and `hello.isaacdessert.dev` verified in production (page, subdomain route, Redis counter, rate limit).
 
 **TODOs:**
 - [x] Domain corrected to isaacdessert.dev (was mistakenly isaacjdessert.dev)
@@ -281,4 +285,4 @@ root-relative paths (`/about`, `/projects`, etc.).
   - [x] Task 11: docs + preview deploy
   - [x] Fix: hello counter POST sends JSON (Astro origin check 403 on Vercel)
   - [x] Final review fixes: subdomain route before filesystem, isolation in build, GET rate limit
-  - [ ] Task 12: production smoke test
+  - [x] Task 12: production smoke test
