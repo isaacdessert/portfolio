@@ -154,11 +154,13 @@ src/
 │   │   ├── index.astro     # Lab projects listing
 │   │   └── hello/          # Reference example project
 │   └── reading.astro       # Reading list
-├── scripts/
-│   ├── new-lab.mjs         # Create new lab project
-│   └── lab-isolation.mjs    # Isolation checker
 └── styles/
     └── global.css          # Base styles, shared component classes
+scripts/
+├── new-lab.mjs             # Create new lab project
+└── lab-isolation.mjs       # Isolation checker
+templates/
+└── lab/                    # Lab project templates (basic, api)
 ```
 
 ## Key Config Files
