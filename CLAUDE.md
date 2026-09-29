@@ -1,312 +1,134 @@
-# Portfolio Site — Claude Context
+# Portfolio — Claude Context
 
-Personal portfolio site for Isaac Dessert (Lead Software Engineer).
-Built with Astro + Tailwind CSS, hosted on Vercel at https://isaacdessert.dev.
+Isaac Dessert's personal site: **https://isaacdessert.dev** (no "j" in the domain; the email
+`isaacjdessert@gmail.com` does have one). Portfolio, resume, Notion-backed blog, reading list, and a
+**lab** for shipping small projects at `/lab/<slug>` and `<slug>.isaacdessert.dev`.
 
-## Local Development
+## Commands
 
 ```bash
 npm install
-npm run dev       # http://localhost:4321/
-npm test          # vitest (unit tests + lab isolation check)
-npm run build     # isolation check → astro build → scripts/vercel-routes.mjs; output in .vercel/output/
+npm run dev        # http://localhost:4321/
+npm test           # vitest: unit tests + lab isolation check
+npm run build      # isolation check → astro build → scripts/vercel-routes.mjs (output: .vercel/output/)
+npm run new <slug> # scaffold a lab project (add `-- --api` for a rate-limited endpoint)
 ```
 
 Local secrets: `vercel env pull .env --environment=preview` (the Development environment has no
-variables). If values come back as `[SENSITIVE]`, see "Secrets" below — Redis/Notion won't work
-locally until real values are in `.env`.
+variables). Values that come back as `[SENSITIVE]` were withheld by Vercel — re-pull in a normal
+terminal or paste real values; without them Notion posts and Redis don't load locally.
 
-### Ship a lab project (quick start)
+## Architecture
 
-```bash
-git checkout -b lab/<slug>
-npm run new <slug>              # add `-- --api` for a rate-limited endpoint
-npm run dev                     # http://localhost:4321/lab/<slug>/
-git push -u origin lab/<slug>   # preview URL
-# merge to main → live at isaacdessert.dev/lab/<slug> and <slug>.isaacdessert.dev
-```
-
-Full details: "Shipping a Lab Project" below. Reference example: `src/pages/lab/hello/`.
-
-### Gotchas (learned the hard way)
-
-- The domain is **isaacdessert.dev** (no "j"). The email `isaacjdessert@gmail.com` does have one.
-  The origin lives in two places: `site` in `astro.config.mjs` and `SITE_ORIGIN` in `src/lab/url.ts`.
-- `vercel.json` `rewrites` do **not** work for subdomains here: the Astro adapter writes its own
-  `.vercel/output/config.json`, and rewrites run after static files anyway. The subdomain route is
-  inserted by `scripts/vercel-routes.mjs`; `vercel.json` only pins `buildCommand`.
-- Call lab endpoints with JSON (`content-type: application/json`). Astro's origin check returns 403
-  for bodiless/form POSTs on Vercel ("Cross-site POST form submissions are forbidden").
-- Subdomain misses fall back to the main site (no 404) — see "Subdomains".
-- Preview deployments are behind Vercel login; `vercel curl <path> --deployment <url>` works from the CLI.
-
-## Deployment
-
-Vercel Git integration: push to `main` → production deploy to isaacdessert.dev.
-Any other branch / PR → preview deploy with its own URL.
-
-Nightly rebuild at midnight US Central fetches new Notion posts:
-`.github/workflows/nightly-rebuild.yml` POSTs to a Vercel Deploy Hook
-(stored as the `VERCEL_DEPLOY_HOOK` repo secret).
-Manual rebuild: GitHub → Actions → "Nightly Rebuild" → Run workflow
-(or "Redeploy" in the Vercel dashboard).
-
-Env vars (`NOTION_TOKEN`, `NOTION_DATABASE_ID`, and any future project
-secrets) live in Vercel → Project → Settings → Environment Variables,
-set for both Production and Preview.
-
-## Rendering Model
-
-`output: 'static'` + `@astrojs/vercel` adapter (v8 — v9+ requires newer Astro).
-Everything is prerendered to static HTML by default. A page or endpoint that
-declares `export const prerender = false` is deployed as a Vercel serverless
-function instead. `vercel.json` only pins `buildCommand`; routing comes from the
-adapter's own `.vercel/output/config.json` plus `scripts/vercel-routes.mjs` (see
-Subdomains below).
-
-## Shipping a Lab Project
-
-Small projects live at `isaacdessert.dev/lab/<slug>` and `<slug>.isaacdessert.dev`.
-Spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`.
-
-### Workflow
-
-```bash
-git checkout -b lab/<slug>
-npm run new <slug>              # page + _meta.ts
-npm run new <slug> -- --api     # …plus a rate-limited API route
-npm run dev                     # http://localhost:4321/lab/<slug>/
-git push -u origin lab/<slug>   # Vercel preview URL
-# merge to main → live
-```
-
-`_meta.ts` `status`: `wip` (listed with badge), `live`, `unlisted` (reachable, hidden, noindex).
-`src/pages/lab/hello/` is the reference example.
-
-### Isolation rules (enforced by `npm test` and by `npm run build`, so violations fail the deploy)
-
-- A project (`src/pages/lab/<slug>/`) imports only from its own folder, `@lab/*`, or npm packages.
-- Shared code lives in `src/lab/` (`@lab/*`): `meta`, `registry`, `url`, `api`, `kv`, `rateLimit`, `LabLayout.astro`.
-  Add to it only when something is intentionally shared.
-- Only `src/pages/lab/index.astro` may import `@lab/*` from portfolio code.
-- npm dependencies are shared (one `package.json`). Needing a conflicting version = time to graduate.
-
-### Conventions
-
-- Wrap pages in `LabLayout` (`fullscreen` for games/canvases).
-- Link inside a project with `labUrl(slug, path)` → `/lab/<slug>/...`. Never relative `./api/x`
-  (it breaks on subdomains).
-- Links built with `siteUrl()` and the nav on lab pages point at production, even on preview deployments.
-- `_`-prefixed files/dirs are ignored by the router (`_components/`, `_lib/`).
-- Endpoints: `api/<name>.ts` with `export const prerender = false`, wrapped in `handler()`.
-  Validate input with `readBody(request, zodSchema)` (`import { z } from 'astro/zod'`).
-- Call endpoints with JSON (`content-type: application/json`). Bodiless or form POSTs get a 403 from Astro's origin check on Vercel.
-- Any endpoint that calls a paid API **must** call `rateLimit()` first.
-- `rateLimit()` keys on `x-forwarded-for`, which Vercel's edge sets; don't trust it if the site ever moves off Vercel.
-- State: `kv('<slug>')` — keys are auto-prefixed `lab:<slug>:`.
-
-### Secrets
-
-- Add in Vercel → Settings → Environment Variables (Production + Preview), then `vercel env pull .env --environment=preview`.
-- If pulled values show as `[SENSITIVE]`, Vercel withheld them (sensitive vars, or the CLI redacting inside an AI session). Re-run the pull in a normal terminal, or paste the Upstash REST URL/token from the Upstash console into `.env`. Deployed environments are unaffected.
-- Project-specific: prefix with the slug in UPPER_SNAKE (`PIXEL_GARDEN_API_KEY`); read with `requireEnv()`.
-- Shared (intentional): `KV_REST_API_URL`, `KV_REST_API_TOKEN` (Upstash), `ANTHROPIC_API_KEY` when added.
-- Set a monthly spend cap in each paid API's console.
-- Set a monthly budget/cap in Upstash too; rate limiting spends Redis commands even when it rejects.
-
-### Adding storage
-
-- Postgres: Vercel Marketplace → Neon → connect to project → `vercel env pull .env --environment=preview`.
-- File uploads: Vercel → Storage → Blob → connect → `vercel env pull .env --environment=preview`.
-- Wrap either in a shared `src/lab/` helper only once a second project needs it.
-
-### Subdomains
-
-`scripts/vercel-routes.mjs` inserts the `<slug>.isaacdessert.dev/*` → `/lab/<slug>/*` route into
-`.vercel/output/config.json` immediately before the `{ handle: "filesystem" }` entry (run by
-`npm run build`; `vercel.json` pins `buildCommand` so Vercel actually runs that build script).
-Plain `vercel.json` `rewrites` can't do this because they're placed after the filesystem check, so a
-static route like the homepage would win before the rewrite ever ran. Passthrough prefixes (excluded
-from the rewrite so they work identically on both hosts): `/_astro/`, `/_image`, `/_server-islands/`,
-`/_vercel/`, `/lab/`, `/favicon.svg`. Production only; the wildcard domain is configured in
-Vercel → Domains.
-
-If the rewritten path doesn't exist, Vercel falls back to the original path: `nope.isaacdessert.dev/`
-shows the homepage and `hello.isaacdessert.dev/about` shows the About page (not a 404). Harmless —
-canonical URLs always point at the apex — but don't rely on subdomain 404s.
-
-### Graduating a project
-
-When a project needs its own dependencies, runtime (WebSockets → Fly.io), or it just gets big: move it
-to its own repo and Vercel project, add `<slug>.isaacdessert.dev` as an explicit domain there (explicit
-beats wildcard), and delete the lab folder.
-
-## Tech Stack
-
-- **Framework**: Astro 5 (static by default, opt-in serverless via `@astrojs/vercel`)
-- **Styling**: Tailwind CSS v3 + `@tailwindcss/typography`
-- **Blog**: Notion CMS via Astro 5 Content Layer
-- **Projects**: GitHub REST API fetched at build time (no token — public API only)
-- **Hosting**: Vercel (domain + DNS also on Vercel)
-
-## Color System
-
-| Token           | Hex       | Usage                        |
-|-----------------|-----------|------------------------------|
-| `bg-primary`    | `#0d0d0d` | Page background              |
-| `bg-surface`    | `#1a1a1a` | Cards, nav, terminal         |
-| `accent-yellow` | `#f5e642` | Headings, CTAs, highlights   |
-| `accent-green`  | `#39ff14` | Tags, badges, active states  |
-| `text-primary`  | `#e8e8e8` | Body text                    |
-| `text-muted`    | `#6b6b6b` | Metadata, dates, hints       |
-
-## Project Structure
+- **Astro 5, static by default**, deployed on **Vercel** via `@astrojs/vercel`. A page/endpoint with
+  `export const prerender = false` becomes a serverless function (only lab APIs do this today).
+- **Tailwind 3** (+ typography plugin), self-hosted fonts via Fontsource, imported in `BaseLayout.astro`:
+  Inter 400/600/700, JetBrains Mono 400/600/700. Using a new weight (e.g. `font-medium`) means adding its import.
+- **Blog**: Notion database → custom Content Layer loader (`src/lib/notionLoader.ts`) at build time.
+- **Projects page**: GitHub REST API at build time (public, no token). Pin repos in `src/data/featured.ts`.
+- **Resume data**: `src/data/resume.ts` is the single source for the About page and the homepage terminal.
+- **Reading list**: `src/data/books.ts` → `/reading`.
+- **Lab**: shared code in `src/lab/` (`@lab/*`), projects in `src/pages/lab/<slug>/`, Upstash Redis for
+  KV + rate limiting.
+- **SEO**: canonical + OG tags in `BaseLayout.astro` (default image `public/og-default.png`),
+  `@astrojs/sitemap`, `public/robots.txt`.
 
 ```
 src/
-├── components/
-│   ├── Nav.astro           # Top nav (sticky, mobile hamburger)
-│   ├── Footer.astro        # GitHub / LinkedIn / email links
-│   ├── Terminal.astro      # Interactive CLI on homepage
-│   ├── ProjectCard.astro   # GitHub repo card
-│   ├── BlogCard.astro      # Blog post preview card
-│   └── LabCard.astro       # Lab project preview card
-├── content/
-│   └── blog/               # Markdown blog posts (.md files)
-├── data/
-│   ├── featured.ts         # Repo names to pin on projects page
-│   └── books.ts            # Reading list data
-├── lab/
-│   ├── meta.ts             # Lab project metadata types
-│   ├── registry.ts         # Manifest of all lab projects
-│   ├── url.ts              # URL helpers (labUrl, etc.)
-│   ├── api.ts              # Endpoint wrappers (handler, readBody)
-│   ├── kv.ts               # KV storage client
-│   ├── rateLimit.ts        # Rate limiting helper
-│   └── LabLayout.astro     # Default layout for lab projects
-├── layouts/
-│   ├── BaseLayout.astro    # HTML shell with nav + footer
-│   └── BlogLayout.astro    # Layout for individual blog posts
-├── pages/
-│   ├── index.astro         # Homepage (hero + terminal)
-│   ├── about.astro         # Resume / skills / experience
-│   ├── projects.astro      # GitHub projects grid
-│   ├── blog/
-│   │   ├── index.astro     # Blog post listing
-│   │   └── [...slug].astro # Individual blog post
-│   ├── lab/
-│   │   ├── index.astro     # Lab projects listing
-│   │   └── hello/          # Reference example project
-│   └── reading.astro       # Reading list
-└── styles/
-    └── global.css          # Base styles, shared component classes
-scripts/
-├── new-lab.mjs             # Create new lab project
-├── lab-isolation.mjs       # Isolation checker
-└── vercel-routes.mjs       # Inserts subdomain route before filesystem (runs in `npm run build`)
-templates/
-└── lab/                    # Lab project templates (basic, api)
+  components/   Nav, Footer, Terminal (homepage CLI), ProjectCard, BlogCard, LabCard
+  data/         resume.ts, books.ts, featured.ts
+  lab/          meta, registry, url, api, kv, rateLimit, LabLayout.astro (+ tests)
+  layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
+  lib/          notionLoader, slug, readTime (+ tests)
+  pages/        index, about, projects, reading, blog/, lab/ (index + hello/)
+  content/      config.ts (blog collection → Notion loader)
+scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs (+ tests)
+templates/lab/  basic/, api/ (used by `npm run new`)
 ```
 
-## Key Config Files
+## Deployment
 
-- `astro.config.mjs` — site URL, base path (`/`), integrations
-- `tailwind.config.mjs` — color tokens, typography plugin config
-- `tsconfig.json` — TypeScript config with `@/*` path alias for `src/`
-- `vercel.json` — only pins `buildCommand`; routes come from the adapter plus `scripts/vercel-routes.mjs`
-- `templates/lab/` — lab project templates (basic, api)
+- Push to `main` → production. Any other branch → preview URL (behind Vercel login; from the CLI use
+  `vercel curl <path> --deployment <url>`).
+- Nightly rebuild (midnight US Central) picks up new Notion posts: `.github/workflows/nightly-rebuild.yml`
+  POSTs the `VERCEL_DEPLOY_HOOK` secret. Run it manually from GitHub Actions to publish immediately.
+- Env vars live in Vercel → Settings → Environment Variables (Production + Preview):
+  `NOTION_TOKEN`, `NOTION_DATABASE_ID`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
+- Domain and DNS are on Vercel: `isaacdessert.dev` + wildcard `*.isaacdessert.dev`.
 
-## Blog Posts
+## Content workflows
 
-Posts are managed in Notion. Publishing workflow:
+- **Blog post**: add a page to the Notion database with Name, Date, Tags, Excerpt, and
+  **Status = `Published`** (Status must be a *Select* property, not Notion's native Status type). Live
+  after the nightly rebuild, or run the workflow. Slug = title lowercased/hyphenated. Missing Date → the
+  page's creation date.
+- **Resume / terminal**: edit `src/data/resume.ts`. Terminal-only copy (whoami blurb) is in `Terminal.astro`.
+- **Reading list**: edit `src/data/books.ts` (`status: 'reading' | 'read' | 'want'`).
+- **Featured repos**: add names to `src/data/featured.ts`.
 
-1. Open your Notion blog database
-2. Create a new page — fill in Name, Date, Tags, Excerpt, and body content
-3. Set **Status** to `Published` (must be a **Select** field type, not the native Status type)
-4. The site rebuilds nightly at midnight US Central (6am UTC) automatically
-5. For immediate publish: go to GitHub → Actions → "Nightly Rebuild" → Run workflow
+## Lab platform
 
-**Notion database fields:**
-| Field | Type | Notes |
-|---|---|---|
-| Name | Title | Post title → URL slug |
-| Date | Date | Publish date |
-| Tags | Multi-select | e.g. engineering, leadership |
-| Excerpt | Text | One-liner shown on blog index card |
-| Status | **Select** | Options: `Published`, `Draft` — must be Select type, not Status type |
-| (page body) | Notion blocks | Full post content |
-
-**Local dev with Notion:**
-Create a `.env` file in the project root (already gitignored) and fill in:
-- `NOTION_TOKEN` — from your Notion integration settings (notion.so/my-integrations)
-- `NOTION_DATABASE_ID` — the 32-char ID from the database URL
-
-If these are not set, the build skips Notion and shows "No posts yet."
-
-## Featured Projects
-
-Edit `src/data/featured.ts` — add GitHub repo names to pin them at the
-top of the projects page with a "featured" badge:
-
-```ts
-export const featuredRepos: string[] = ['repo-name', 'another-repo'];
+```bash
+git checkout -b lab/<slug>
+npm run new <slug>              # page + _meta.ts  (-- --api adds a rate-limited endpoint)
+npm run dev                     # /lab/<slug>/
+git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/lab/<slug> + <slug>.isaacdessert.dev
 ```
 
-## Reading List
+- `_meta.ts` status: `wip` (listed, badge), `live`, `unlisted` (reachable, hidden, noindex).
+  Reference project: `src/pages/lab/hello/` (page + Redis counter API).
+- **Isolation (enforced by `npm test` and `npm run build`)**: a project imports only its own folder,
+  `@lab/*`, or npm packages. Shared code goes in `src/lab/` only when intentionally shared. Only
+  `src/pages/lab/index.astro` may import `@lab/*` from portfolio code. npm deps are shared — needing a
+  conflicting version means it's time to graduate the project to its own repo.
+- Pages use `LabLayout` (`fullscreen` for games/canvases). Link with `labUrl(slug, path)` — never
+  relative paths (they break on subdomains). `siteUrl()`/nav links always point at production.
+- `_`-prefixed files/dirs are ignored by the router (`_components/`, `_lib/`).
+- Endpoints: `api/<name>.ts`, `export const prerender = false`, wrap in `handler()`, validate with
+  `readBody(request, schema)` (`import { z } from 'astro/zod'`). Call them with **JSON** bodies.
+- Anything calling a paid API **must** `rateLimit()` first (keys on `x-forwarded-for`, set by Vercel).
+- State: `kv('<slug>')` — keys auto-prefixed `lab:<slug>:`.
+- Secrets: project-specific vars prefixed with the slug (`PIXEL_GARDEN_API_KEY`), read via `requireEnv()`.
+- Storage beyond Redis: Vercel Marketplace (Neon Postgres, Blob), then `vercel env pull`.
+- Graduate a project: own repo + Vercel project, add `<slug>.isaacdessert.dev` there (explicit domain
+  beats the wildcard), delete the lab folder.
 
-Edit `src/data/books.ts`. Each book has:
-```ts
-{
-  title: string;
-  author: string;
-  year?: number;    // year read
-  take?: string;    // your short opinion
-  status: 'reading' | 'read' | 'want';
-}
-```
+## Gotchas
 
-## Blog & Reading Status
+- **Subdomain routing** is inserted into `.vercel/output/config.json` *before* Vercel's filesystem
+  check by `scripts/vercel-routes.mjs`. `vercel.json` `rewrites` can't do it (the adapter writes its own
+  config, and rewrites run after static files), so `vercel.json` only pins `buildCommand`. Passthrough:
+  `/_astro/ /_image /_server-islands/ /_vercel/ /lab/ /favicon.svg`. Production only.
+- **Subdomain misses fall back** to the main site instead of 404 (`nope.isaacdessert.dev` → homepage).
+  Harmless; canonicals point at the apex.
+- **Astro's origin check** 403s bodiless/form POSTs on Vercel ("Cross-site POST form submissions are
+  forbidden") — send JSON.
+- The site origin is set in two places: `site` in `astro.config.mjs` and `SITE_ORIGIN` in `src/lab/url.ts`.
+- `vercel link` appends `.vercel`/`.env*` to `.gitignore`; the existing rules already cover them — drop
+  the additions.
 
-- **Blog** — live. Posts managed in Notion database, fetched at build time. Linked in nav, homepage CTA, and terminal.
-- **Reading** — still hidden. To enable: uncomment `{ label: 'Reading', href: '/reading' }` in
-  `Nav.astro`, `<a href="/reading" ...>Reading List</a>` in `index.astro`, and add `reading: '/reading'`
-  to the `open` routes in `Terminal.astro`.
+## Design tokens
 
-## Updating Personal Info
+`bg-primary #0d0d0d` (page) · `bg-surface #1a1a1a` (cards/nav) · `accent-yellow #f5e642` (headings,
+CTAs) · `accent-green #39ff14` (tags, active) · `text-primary #e8e8e8` · `text-muted #6b6b6b`.
+Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
-- **Email / social links**: `src/components/Footer.astro` and `src/pages/about.astro`
-- **Resume content** (jobs, skills, education): `src/pages/about.astro`
-- **Terminal content** (whoami, experience, contact): `src/components/Terminal.astro`
+## Decision log
 
-## GitHub API — Projects Page
-
-No token used. Fetches `https://api.github.com/users/isaacdessert/repos`
-at build time using the unauthenticated public API (60 req/hr limit, fine
-for a static build). Forks and archived repos are filtered out automatically.
-
-## Base Path
-
-The site is served from the domain root (`base: '/'`). All internal links use
-root-relative paths (`/about`, `/projects`, etc.).
+- **2026-09 hosting**: moved GitHub Pages → Vercel (domain was already on Vercel; serverless functions
+  and previews for the lab). GitHub Pages is unpublished.
+- **Lab design**: one Astro app, routes first + automatic subdomains, strict per-project isolation with a
+  single shared space. Spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`.
+- **Redis**: Upstash free tier (KV + rate limiting); code only connects on first use.
+- **Cleanup (2026-09-28)**: shared resume data, self-hosted fonts, OG image, sitemap, `/reading`
+  enabled, finished plan docs removed (git history keeps them).
 
 ## Status & TODOs
 
-**Status:** Lab platform live (merged 2026-09-28). `/lab/hello` and `hello.isaacdessert.dev` verified in production (page, subdomain route, Redis counter, rate limit).
+**Status:** Live. Cleanup phase 1 merged; phase 2 (Astro 7 upgrade for security advisories) next.
 
-**TODOs:**
-- [x] Domain corrected to isaacdessert.dev (was mistakenly isaacjdessert.dev)
-- [x] Vercel: confirm project is Git-connected to `isaacdessert/portfolio` (auto-deploy `main`, previews on branches)
-- [x] Vercel: set `NOTION_TOKEN` / `NOTION_DATABASE_ID` for Production + Preview
-- [x] Vercel: create Deploy Hook on `main`; save URL as GitHub secret `VERCEL_DEPLOY_HOOK`
-- [x] GitHub: disable Pages (Settings → Pages) once Vercel is confirmed serving the domain
-- [x] Lab system design — spec: `docs/superpowers/specs/2026-09-26-lab-platform-design.md`
-- [x] Lab platform built and live (plan: `docs/superpowers/plans/2026-09-26-lab-platform.md`; tasks 1–12 + final-review fixes)
-
-**Open follow-ups:**
-- [ ] Set a monthly budget/cap in Upstash (and on any paid API before using it in a lab endpoint)
-- [ ] Local `.env` holds `[SENSITIVE]` placeholders for Redis/Notion — re-pull in a normal terminal or paste real values to use them in `npm run dev`
-- [ ] `public/og-default.png` doesn't exist but `BaseLayout` references it (link previews have no image)
-- [ ] Spec §9 still names `vercel-rewrites.test.ts`; it's now `scripts/vercel-routes.test.ts`
-- [ ] Optional: make unknown subdomains 404 instead of falling back to the main site
-- [ ] Optional: derive `SITE_ORIGIN` from one source instead of duplicating `astro.config.mjs` `site`
-- [ ] Optional: delete the merged `feat/lab-platform` branch (local + GitHub)
+- [ ] Astro 5 → 7 + `@astrojs/vercel` 11 (fixes open Astro advisories; needs Node ≥ 22.12 on Vercel;
+      replaces `@astrojs/tailwind`)
+- [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
+- [ ] Optional: unknown subdomains → 404 instead of the main site
+- [ ] Optional: single source for the site origin
