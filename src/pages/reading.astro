@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { sortBooks } from '@/lib/notionBooks';
+import { pageMeta } from '@/data/pageMeta';
 
 const books = sortBooks((await getCollection('books')).map((entry) => entry.data));
 
@@ -11,8 +12,8 @@ const want    = books.filter(b => b.status === 'want');
 ---
 
 <BaseLayout
-  title="Reading"
-  description="Books Isaac Dessert is reading, has read, and wants to read."
+  title={pageMeta.reading.title}
+  description={pageMeta.reading.description}
 >
   <div class="max-w-3xl mx-auto px-6 py-20">
     <header class="mb-14">

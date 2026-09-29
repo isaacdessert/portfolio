@@ -1,7 +1,8 @@
 // Enforces lab isolation (see docs/superpowers/specs/2026-09-26-lab-platform-design.md §1):
 // - projects (src/pages/lab/<slug>/) import only their own folder, @lab/*, npm
 // - shared space (src/lab/) imports only itself, npm, BaseLayout, global.css
-// - portfolio code imports @lab/* only from src/pages/lab/index.astro
+// - portfolio code imports @lab/* only from src/pages/lab/index.astro or the og card
+//   endpoint (src/pages/og/[...slug].png.ts), which reads project metadata for OG cards
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -9,6 +10,8 @@ const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.astro', '.svelte', '
 const SHARED = 'src/lab/';
 const PROJECTS = 'src/pages/lab/';
 const LAB_INDEX = 'src/pages/lab/index.astro';
+const OG_ENDPOINT = 'src/pages/og/[...slug].png.ts';
+const ALLOWED_LAB_READERS = new Set([LAB_INDEX, OG_ENDPOINT]);
 const BRIDGE = new Set(['src/layouts/BaseLayout.astro', 'src/styles/global.css']);
 
 const IMPORT_PATTERNS = [
@@ -61,8 +64,8 @@ function checkShared(target) {
 }
 
 function checkPortfolio(target, file) {
-  if (target !== null && target.startsWith(SHARED) && file !== LAB_INDEX) {
-    return 'Only src/pages/lab/index.astro may import from @lab/*';
+  if (target !== null && target.startsWith(SHARED) && !ALLOWED_LAB_READERS.has(file)) {
+    return 'Only src/pages/lab/index.astro or src/pages/og/[...slug].png.ts may import from @lab/*';
   }
   return null;
 }

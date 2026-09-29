@@ -1,11 +1,12 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { skills, experience, education, contact } from '@/data/resume';
+import { pageMeta } from '@/data/pageMeta';
 ---
 
 <BaseLayout
-  title="About"
-  description="About Isaac Dessert — Lead Software Engineer. Resume, skills, and experience."
+  title={pageMeta.about.title}
+  description={pageMeta.about.description}
 >
   <div class="max-w-5xl mx-auto px-6 py-20">
     <header class="mb-16">

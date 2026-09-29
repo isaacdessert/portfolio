@@ -3,6 +3,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import BlogCard from '@/components/BlogCard.astro';
 import { getCollection } from 'astro:content';
 import { estimateReadTime } from '@/lib/readTime';
+import { pageMeta } from '@/data/pageMeta';
 
 const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 
@@ -10,8 +11,8 @@ allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 ---
 
 <BaseLayout
-  title="Blog"
-  description="Writing by Isaac Dessert on engineering, systems, and team leadership."
+  title={pageMeta.blog.title}
+  description={pageMeta.blog.description}
 >
   <div class="max-w-5xl mx-auto px-6 py-20">
     <header class="mb-12">

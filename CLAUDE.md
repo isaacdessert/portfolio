@@ -33,21 +33,28 @@ terminal or paste real values; without them Notion posts and Redis don't load lo
 - **Reading list**: Notion database → custom Content Layer loader (`src/lib/notionBooksLoader.ts`) at build time.
 - **Lab**: shared code in `src/lab/` (`@lab/*`), projects in `src/pages/lab/<slug>/`, Upstash Redis for
   KV + rate limiting.
-- **SEO**: canonical + OG tags in `BaseLayout.astro` (default image `public/og-default.png`),
-  `@astrojs/sitemap`, `public/robots.txt`. `og-default.png` is 1200×630, generated once with sharp
-  from an SVG (no script kept); `unlisted` lab pages are filtered out of the sitemap via
-  `scripts/unlisted-lab.mjs`.
+- **SEO**: canonical + OG tags in `BaseLayout.astro`. Every page gets its own 1200×630 OG preview
+  card, rendered at build time by `src/pages/og/[...slug].png.ts` (Satori → `@resvg/resvg-js`,
+  JetBrains Mono/Inter `.woff` files read from Fontsource). `src/lib/og/path.ts`'s `ogImageFor()`
+  maps a pathname to its card's path (a lab project's or blog post's sub-pages share its card);
+  `src/data/pageMeta.ts` is the single source for the static pages' (about/projects/blog/reading/lab)
+  titles and descriptions, feeding both `BaseLayout` and their OG cards. Home keeps
+  `public/og-default.png` (1200×630, generated once with sharp from an SVG, no script kept).
+  `@astrojs/sitemap`, `public/robots.txt`; `unlisted` lab pages are filtered out of the sitemap via
+  `scripts/unlisted-lab.mjs`. `scripts/check-og.mjs` runs at the end of `npm run build` and fails it
+  if any page's `og:image` doesn't resolve to a file in the static output.
 
 ```
 src/
   components/   Nav, Footer, Terminal (homepage CLI), ProjectCard, BlogCard, LabCard
-  data/         resume.ts, featured.ts
+  data/         resume.ts, featured.ts, pageMeta.ts (static pages' titles/descriptions)
   lab/          meta, registry, url, api, kv, rateLimit, slug-rules.mjs, LabLayout.astro (+ tests)
   layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
-  lib/          notionLoader, notionBooks, notionBooksLoader, slug, readTime (+ tests)
-  pages/        index, about, projects, reading, 404, blog/, lab/ (index + hello/, injuries/)
+  lib/          notionLoader, notionBooks, notionBooksLoader, slug, readTime, og/ (card, path) (+ tests)
+  pages/        index, about, projects, reading, 404, blog/, lab/ (index + hello/, injuries/),
+                og/[...slug].png.ts (per-page OG cards)
   content.config.ts  blog collection → Notion loader
-scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs (+ tests)
+scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs, check-og.mjs (+ tests)
 templates/lab/  basic/, api/ (used by `npm run new`)
 ```
 
@@ -91,8 +98,9 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
 - A project's tests may live in its own `_lib/` folder, colocated with the code they cover.
 - **Isolation (enforced by `npm test` and `npm run build`)**: a project imports only its own folder,
   `@lab/*`, or npm packages. Shared code goes in `src/lab/` only when intentionally shared. Only
-  `src/pages/lab/index.astro` may import `@lab/*` from portfolio code. npm deps are shared — needing a
-  conflicting version means it's time to graduate the project to its own repo.
+  `src/pages/lab/index.astro` and `src/pages/og/[...slug].png.ts` (reads each project's
+  title/description/tags to render its OG card) may import `@lab/*` from portfolio code. npm deps
+  are shared — needing a conflicting version means it's time to graduate the project to its own repo.
 - Pages use `LabLayout` (`fullscreen` for games/canvases). Link with `labUrl(slug, path)` — never
   relative paths (they break on subdomains). `siteUrl()`/nav links always point at production.
 - `_`-prefixed files/dirs are ignored by the router (`_components/`, `_lib/`).
@@ -125,6 +133,9 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
 - The site origin is set in two places: `site` in `astro.config.mjs` and `SITE_ORIGIN` in `src/lab/url.ts`.
 - `vercel link` appends `.vercel`/`.env*` to `.gitignore`; the existing rules already cover them — drop
   the additions.
+- **Social platforms cache OG previews** aggressively (per-URL, keyed off the URL not the image
+  content). After changing a page's title/description or its card, use LinkedIn's Post Inspector
+  (or the equivalent debugger for the platform you're checking) to force a refetch before resharing.
 
 ## Design tokens
 
@@ -141,11 +152,18 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 - **Redis**: Upstash free tier (KV + rate limiting); code only connects on first use.
 - **Cleanup (2026-09-28)**: shared resume data, self-hosted fonts, OG image, sitemap, `/reading`
   enabled, finished plan docs removed (git history keeps them).
+- **Per-page OG cards (2026-09-29)**: replaced the single generic `og-default.png` (still used for
+  home and 404) with a card per page/post/project, rendered at build time with Satori + resvg from
+  each page's own title/description.
 
 ## Status & TODOs
 
 **Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains, `npm audit` clean).
 
+- [ ] Verify per-page OG cards on production (LinkedIn Post Inspector) after the first deploy of this branch
+- [ ] `npm audit`: `satori`@^0.33 pulls in `fflate` 0.7.x (moderate, malformed-zip DoS) via its
+      opentype.js dependency — unused code path for us (we only load `.woff`, not zipped font
+      collections); revisit once satori bumps its own `fflate` pin
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
 - [ ] Optional: pin `engines.node` to `>=22.12.0 <25` so Vercel doesn't auto-jump Node majors
 - [ ] Optional: replace deprecated `z.ZodTypeAny` in `src/lab/api.ts`; add a type-check step (`astro check`)

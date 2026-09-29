@@ -2,11 +2,12 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import LabCard from '@/components/LabCard.astro';
 import { projects, visibleProjects } from '@lab/registry';
+import { pageMeta } from '@/data/pageMeta';
 
 const list = visibleProjects(projects);
 ---
 
-<BaseLayout title="Lab" description="Small experiments, toys, and tools Isaac has shipped.">
+<BaseLayout title={pageMeta.lab.title} description={pageMeta.lab.description}>
   <section class="max-w-5xl mx-auto px-6 py-16">
     <h1 class="font-mono text-4xl font-bold text-accent-yellow">
       lab<span class="text-accent-green">/</span>

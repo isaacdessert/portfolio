@@ -1,6 +1,7 @@
 ---
 import Nav from '@/components/Nav.astro';
 import Footer from '@/components/Footer.astro';
+import { ogImageFor } from '@/lib/og/path';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
@@ -25,7 +26,7 @@ interface Props {
 const {
   title,
   description = 'Isaac Dessert — Lead Software Engineer. Personal site, blog, and portfolio.',
-  ogImage = '/og-default.png',
+  ogImage = ogImageFor(Astro.url.pathname),
   absoluteLinks = false,
   noindex = false,
   bare = false,

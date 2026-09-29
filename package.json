@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "vitest run scripts/lab-isolation.test.ts && astro build && node scripts/vercel-routes.mjs",
+    "build": "vitest run scripts/lab-isolation.test.ts && astro build && node scripts/vercel-routes.mjs && node scripts/check-og.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run",
@@ -16,6 +16,7 @@
     "@fontsource/inter": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@notionhq/client": "^2.3.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/typography": "^0.5.0",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
@@ -23,6 +24,7 @@
     "autoprefixer": "^10.6.1",
     "marked": "^18.0.2",
     "notion-to-md": "^3.1.9",
+    "satori": "^0.33.5",
     "tailwindcss": "^3.4.0"
   },
   "devDependencies": {

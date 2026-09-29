@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import ProjectCard from '@/components/ProjectCard.astro';
 import { featuredRepos } from '@/data/featured';
+import { pageMeta } from '@/data/pageMeta';
 
 interface GitHubRepo {
   id: number;
@@ -46,8 +47,8 @@ try {
 ---
 
 <BaseLayout
-  title="Projects"
-  description="Open source projects and past work by Isaac Dessert."
+  title={pageMeta.projects.title}
+  description={pageMeta.projects.description}
 >
   <div class="max-w-5xl mx-auto px-6 py-20">
     <header class="mb-12">

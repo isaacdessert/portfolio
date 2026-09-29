@@ -116,4 +116,14 @@ describe('findViolations', () => {
       expect.objectContaining({ file: 'src/pages/about.astro', import: '@lab/url' }),
     ]);
   });
+
+  it('also lets the og card endpoint import @lab from portfolio code, but not other pages', async () => {
+    const root = await repo({
+      'src/pages/og/[...slug].png.ts': `import { projects } from '@lab/registry';`,
+      'src/pages/other.ts': `import { siteUrl } from '@lab/url';`,
+    });
+    expect(await findViolations(root)).toEqual([
+      expect.objectContaining({ file: 'src/pages/other.ts', import: '@lab/url' }),
+    ]);
+  });
 });
