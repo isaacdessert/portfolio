@@ -51,7 +51,7 @@ src/
   lab/          meta, registry, url, api, kv, rateLimit, slug-rules.mjs, LabLayout.astro (+ tests)
   layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
   lib/          notionLoader, notionBooks, notionBooksLoader, slug, readTime, og/ (card, path) (+ tests)
-  pages/        index, about, projects, reading, 404, blog/, lab/ (index + hello/, injuries/),
+  pages/        index, about, projects, reading, 404, blog/, lab/ (index + injuries/),
                 og/[...slug].png.ts (per-page OG cards)
   content.config.ts  blog collection → Notion loader
 scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs, check-og.mjs (+ tests)
@@ -92,9 +92,10 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
 ```
 
 - `_meta.ts` status: `wip` (listed, badge), `live`, `unlisted` (reachable, hidden, noindex).
-  Reference project: `src/pages/lab/hello/` (page + Redis counter API).
-- Projects: hello (reference: page + Redis counter), injuries (ESPN injury feed, 10-min KV cache +
-  last-good fallback; unofficial source, OK to break).
+  Reference project: `src/pages/lab/injuries/` (page + API route, KV cache with last-good fallback,
+  rate limit, colocated `_lib/` tests).
+- Projects: injuries (ESPN injury feed, 10-min KV cache + last-good fallback; unofficial source, OK
+  to break).
 - A project's tests may live in its own `_lib/` folder, colocated with the code they cover.
 - **Isolation (enforced by `npm test` and `npm run build`)**: a project imports only its own folder,
   `@lab/*`, or npm packages. Shared code goes in `src/lab/` only when intentionally shared. Only

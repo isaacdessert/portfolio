@@ -36,7 +36,7 @@ describe('unlistedLabPaths', () => {
     expect(unlistedLabPaths(root)).toEqual([]);
   });
 
-  it('returns [] on the real repo (hello is live)', () => {
+  it('returns [] on the real repo (no unlisted projects)', () => {
     expect(unlistedLabPaths(process.cwd())).toEqual([]);
   });
 });
