@@ -30,8 +30,10 @@ export const getStaticPaths: GetStaticPaths = async () => {
     });
     return {
       params: { slug },
+      // Post slugs can run long ("leveraging-ai-in-non-software-development"); the eyebrow shows
+      // the section, not the full path, so it always fits on one line.
       props: {
-        eyebrow: `isaacdessert.dev/${slug}`,
+        eyebrow: 'isaacdessert.dev/blog',
         title: post.data.title,
         description: post.data.excerpt,
         footer: `${formattedDate} · ${estimateReadTime(post.body ?? '')} min read`,

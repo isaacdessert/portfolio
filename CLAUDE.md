@@ -167,9 +167,8 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
 ## Status & TODOs
 
-**Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains, `npm audit` clean).
+**Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains; `npm audit` has 2 accepted moderate findings — satori → fflate, see Gotchas).
 
-- [ ] Verify per-page OG cards on production (LinkedIn Post Inspector) after the first deploy of this branch
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
 - [ ] Optional: pin `engines.node` to `>=22.12.0 <25` so Vercel doesn't auto-jump Node majors
 - [ ] Optional: replace deprecated `z.ZodTypeAny` in `src/lab/api.ts`; add a type-check step (`astro check`)

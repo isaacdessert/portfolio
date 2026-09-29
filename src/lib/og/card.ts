@@ -73,6 +73,12 @@ function truncate(text: string, max: number): string {
   return `${text.slice(0, max).trimEnd()}…`;
 }
 
+/** Keeps the eyebrow on one line: anything over 44 chars is cut to 43 + an ellipsis. */
+export function clampEyebrow(eyebrow: string): string {
+  if (eyebrow.length <= 44) return eyebrow;
+  return `${eyebrow.slice(0, 43)}…`;
+}
+
 // Faint grid like the homepage hero. Kept as a fallback-friendly single style object:
 // if Satori ever rejects multi-layer backgroundImage, drop to COLOR_BG only here.
 const GRID_BACKGROUND = {
@@ -82,7 +88,8 @@ const GRID_BACKGROUND = {
 };
 
 function buildTree(input: CardInput) {
-  const { eyebrow, title, footer } = input;
+  const { title, footer } = input;
+  const eyebrow = clampEyebrow(input.eyebrow);
   const description = input.description ? truncate(input.description, 150) : undefined;
 
   return {
