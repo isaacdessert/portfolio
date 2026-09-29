@@ -138,9 +138,11 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
 ## Status & TODOs
 
-**Status:** Live on Astro 7.
+**Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains, `npm audit` clean). Next: reading list from Notion.
 
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
-- [ ] Confirm on production that unknown subdomains now serve the 404 page
+- [ ] Reading list from a Notion database (replaces `src/data/books.ts`; needs `NOTION_BOOKS_DATABASE_ID`)
+- [ ] Optional: pin `engines.node` to `>=22.12.0 <25` so Vercel doesn't auto-jump Node majors
+- [ ] Optional: replace deprecated `z.ZodTypeAny` in `src/lab/api.ts`; add a type-check step (`astro check`)
 - [ ] Optional: single source for the site origin
 - [ ] Optional: Tailwind 4 migration (visual-risk; separate)
