@@ -290,7 +290,8 @@ Vitest (`npm test`):
 - `rateLimit.test.ts` — IP extraction; 429 + `Retry-After` when limited
   (limiter mocked).
 - `url.test.ts` — `labUrl`, `siteUrl`.
-- `vercel-rewrites.test.ts` — loads `vercel.json`, checks host/path patterns
+- `scripts/vercel-routes.test.ts` — verifies the lab subdomain route is inserted
+  immediately before the filesystem handle, and checks host/path emulation
   against a case table (apex, `www`, `hello.` subdomain, `/_astro/…`, `/lab/…`).
 - `new-lab.test.ts` — scaffold into a temp dir: files created, placeholders
   replaced, invalid/duplicate slug rejected.

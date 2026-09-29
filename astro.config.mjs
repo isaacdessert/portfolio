@@ -5,7 +5,6 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://isaacdessert.dev',
-  base: '/',
   integrations: [tailwind(), sitemap()],
   // Static by default. Any page or endpoint that exports
   // `const prerender = false` becomes a Vercel serverless function.
