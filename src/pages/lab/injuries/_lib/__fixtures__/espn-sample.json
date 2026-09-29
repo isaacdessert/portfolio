@@ -1,0 +1,972 @@
+{
+ "timestamp": "2026-09-29T14:10:41Z",
+ "status": "success",
+ "season": {
+  "year": 2026,
+  "type": 2,
+  "name": "Regular Season",
+  "displayName": "2026"
+ },
+ "injuries": [
+  {
+   "id": "29",
+   "displayName": "Carolina Panthers",
+   "injuries": [
+    {
+     "id": "-2018947",
+     "longComment": "out",
+     "shortComment": "out",
+     "status": "Out",
+     "date": "2026-09-28T18:17Z",
+     "athlete": {
+      "firstName": "Xavier",
+      "lastName": "Legette",
+      "displayName": "Xavier Legette",
+      "shortName": "X. Legette",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4430034/xavier-legette",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CAR",
+       "displayName": "Carolina Panthers"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2018947",
+         "type": "news",
+         "date": "2026-09-28T18:17Z",
+         "headline": "out",
+         "text": "out",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4430034/injuries/-2018947?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Knee",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-10-04"
+     }
+    },
+    {
+     "id": "639671",
+     "longComment": "Coker made an early exit from Sunday's 21-18 loss to the Browns due to the quad issue, but follow-up tests Monday appear to have revealed nothing overly significant. That being said, Coker's status for Week 4 is still up in the air, with his practice activity Wednesday through Friday likely to be the determining factor in whether he plays. Despite leaving early in Week 3 in addition to being a regular on injury reports ahead of the Panthers' last two games due to an ankle issue, Coker has gotten off to a stellar start to the season with an 18-222-2 receiving line on 22 targets.",
+     "shortComment": "Coker has been diagnosed with a minor quadriceps strain and could be available to play in next Sunday's game against the Lions, Ian Rapoport of NFL Network reports.",
+     "status": "Questionable",
+     "date": "2026-09-28T15:16Z",
+     "athlete": {
+      "firstName": "Jalen",
+      "lastName": "Coker",
+      "displayName": "Jalen Coker",
+      "shortName": "J. Coker",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4695883/jalen-coker",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CAR",
+       "displayName": "Carolina Panthers"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639671",
+         "type": "news",
+         "date": "2026-09-28T15:16Z",
+         "headline": "Coker has been diagnosed with a minor quadriceps strain and could be available to play in next Sunday's game against the Lions, Ian Rapoport of NFL Network reports.",
+         "text": "Coker made an early exit from Sunday's 21-18 loss to the Browns due to the quad issue, but follow-up tests Monday appear to have revealed nothing overly significant. That being said, Coker's status for Week 4 is still up in the air, with his practice activity Wednesday through Friday likely to be the determining factor in whether he plays. Despite leaving early in Week 3 in addition to being a regular on injury reports ahead of the Panthers' last two games due to an ankle issue, Coker has gotten off to a stellar start to the season with an 18-222-2 receiving line on 22 targets.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4695883/injuries/639671?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "2",
+      "name": "INJURY_STATUS_QUESTIONABLE",
+      "description": "questionable",
+      "abbreviation": "Q"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Quadriceps",
+      "location": "Leg",
+      "detail": "Strain",
+      "side": "Not Specified",
+      "returnDate": "2026-10-04"
+     }
+    },
+    {
+     "id": "638800",
+     "longComment": "Brooks is expected to be officially placed on injured reserve in the coming days after he exited this past Sunday's 34-3 win over the Falcons due to what had previously been labeled as a groin injury. With Brooks set to miss time, Chuba Hubbard should be further insulated as the Panthers' No. 1 back, while AJ Dillon is lone healthy backup option on the 53-man roster. Aaron Wilson of KPRC 2 Houston relays that the Panthers plan to work out veteran Austin Ekeler on Wednesday, and he could eventually be signed to provide further depth in the backfield.",
+     "shortComment": "Brooks is expected to undergo surgery Wednesday to repair a core-muscle injury and is likely to miss at least six weeks, Ian Rapoport of NFL Network reports.",
+     "status": "Injured Reserve",
+     "date": "2026-09-23T13:10Z",
+     "athlete": {
+      "firstName": "Jonathon",
+      "lastName": "Brooks",
+      "displayName": "Jonathon Brooks",
+      "shortName": "J. Brooks",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4678008/jonathon-brooks",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "9",
+       "name": "Running Back",
+       "displayName": "Running Back",
+       "abbreviation": "RB",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CAR",
+       "displayName": "Carolina Panthers"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "638800",
+         "type": "news",
+         "date": "2026-09-23T13:10Z",
+         "headline": "Brooks is expected to undergo surgery Wednesday to repair a core-muscle injury and is likely to miss at least six weeks, Ian Rapoport of NFL Network reports.",
+         "text": "Brooks is expected to be officially placed on injured reserve in the coming days after he exited this past Sunday's 34-3 win over the Falcons due to what had previously been labeled as a groin injury. With Brooks set to miss time, Chuba Hubbard should be further insulated as the Panthers' No. 1 back, while AJ Dillon is lone healthy backup option on the 53-man roster. Aaron Wilson of KPRC 2 Houston relays that the Panthers plan to work out veteran Austin Ekeler on Wednesday, and he could eventually be signed to provide further depth in the backfield.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4678008/injuries/638800?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "13",
+       "name": "Day-To-Day",
+       "type": "day-to-day",
+       "abbreviation": "Day-To-Day"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "5",
+      "name": "INJURY_STATUS_IR",
+      "description": "Injured Reserve",
+      "abbreviation": "IR"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "IR",
+       "abbreviation": "IR"
+      },
+      "type": "Abdomen",
+      "location": "Torso",
+      "detail": "Surgery",
+      "side": "Not Specified",
+      "returnDate": "2026-11-08"
+     }
+    },
+    {
+     "id": "-2018940",
+     "longComment": "",
+     "shortComment": "",
+     "status": "Active",
+     "date": "2026-09-28T18:17Z",
+     "athlete": {
+      "firstName": "Haynes",
+      "lastName": "King",
+      "displayName": "Haynes King",
+      "shortName": "H. King",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4428993/haynes-king",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "8",
+       "name": "Quarterback",
+       "displayName": "Quarterback",
+       "abbreviation": "QB",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CAR",
+       "displayName": "Carolina Panthers"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2018940",
+         "type": "news",
+         "date": "2026-09-28T18:17Z",
+         "headline": "",
+         "text": "",
+         "source": "RotoWire"
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "0",
+      "name": "INJURY_STATUS_ACTIVE",
+      "description": "active",
+      "abbreviation": "A"
+     }
+    },
+    {
+     "id": "639710",
+     "longComment": "A calf injury prevented Lloyd from playing in the Panthers' 21-18 loss to the Browns on Sunday, but the fifth-year pro is trending toward returning for Week 4. Wednesday's injury report will provide more clarity on Lloyd's status, and he would avoid an injury designation entirely with a full practice over the coming days.",
+     "shortComment": "Head coach Dave Canales expressed confidence Monday that Lloyd (calf) would be back at practice ahead of the Panthers' Week 4 home game against the Lions, Mike Kaye of ESPN.com reports.",
+     "status": "Out",
+     "date": "2026-09-28T23:16Z",
+     "athlete": {
+      "firstName": "Devin",
+      "lastName": "Lloyd",
+      "displayName": "Devin Lloyd",
+      "shortName": "D. Lloyd",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4243256/devin-lloyd",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "30",
+       "name": "Linebacker",
+       "displayName": "Linebacker",
+       "abbreviation": "LB",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CAR",
+       "displayName": "Carolina Panthers"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639710",
+         "type": "news",
+         "date": "2026-09-28T23:16Z",
+         "headline": "Head coach Dave Canales expressed confidence Monday that Lloyd (calf) would be back at practice ahead of the Panthers' Week 4 home game against the Lions, Mike Kaye of ESPN.com reports.",
+         "text": "A calf injury prevented Lloyd from playing in the Panthers' 21-18 loss to the Browns on Sunday, but the fifth-year pro is trending toward returning for Week 4. Wednesday's injury report will provide more clarity on Lloyd's status, and he would avoid an injury designation entirely with a full practice over the coming days.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4243256/injuries/639710?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Calf",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-10-04"
+     }
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "displayName": "Cincinnati Bengals",
+   "injuries": [
+    {
+     "id": "639724",
+     "longComment": "Young suffered a left knee injury in the first quarter of Sunday's 30-27 loss to the Steelers, and he was forced to miss the remainder of the contest. Head coach Zac Taylor provided an update Monday, explaining the wide receiver isn't dealing with a long-term injury, but he will be sidelined for at least one game. The Bengals are expected reevaluate the injury after Week 4 and then determine the next steps for Young.",
+     "shortComment": "Young (knee) is not expected to play in Week 4 against the Jaguars, Jay Morrison of SI.com reports.",
+     "status": "Out",
+     "date": "2026-09-28T23:37Z",
+     "athlete": {
+      "firstName": "Colbie",
+      "lastName": "Young",
+      "displayName": "Colbie Young",
+      "shortName": "C. Young",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/5092508/colbie-young",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CIN",
+       "displayName": "Cincinnati Bengals"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639724",
+         "type": "news",
+         "date": "2026-09-28T23:37Z",
+         "headline": "Young (knee) is not expected to play in Week 4 against the Jaguars, Jay Morrison of SI.com reports.",
+         "text": "Young suffered a left knee injury in the first quarter of Sunday's 30-27 loss to the Steelers, and he was forced to miss the remainder of the contest. Head coach Zac Taylor provided an update Monday, explaining the wide receiver isn't dealing with a long-term injury, but he will be sidelined for at least one game. The Bengals are expected reevaluate the injury after Week 4 and then determine the next steps for Young.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/5092508/injuries/639724?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "OUT",
+       "abbreviation": "OUT"
+      },
+      "type": "Knee",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Left",
+      "returnDate": "2026-10-11"
+     }
+    },
+    {
+     "id": "639301",
+     "longComment": "Iosivas is having surgery to repair a torn ligament in his thumb, necessitating his move to injured reserve. As such, he will not be allowed to play for at least the next four games, so the earliest Iosivas can return is Week 8 against the Titans on Sunday, Nov. 1. Ja'Marr Chase and Tee Higgins will continue to serve as the Bengals' top pass catchers, but in Iosivas' absence, there are more offensive snaps available for rookie fourth-rounder Colbie Young, Dohnte Meyers and Ke'Shawn Williams.",
+     "shortComment": "The Bengals placed Iosivas (thumb) on injured reserve Saturday.",
+     "status": "Injured Reserve",
+     "date": "2026-09-26T20:26Z",
+     "athlete": {
+      "firstName": "Andrei",
+      "lastName": "Iosivas",
+      "displayName": "Andrei Iosivas",
+      "shortName": "A. Iosivas",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4368003/andrei-iosivas",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CIN",
+       "displayName": "Cincinnati Bengals"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639301",
+         "type": "news",
+         "date": "2026-09-26T20:26Z",
+         "headline": "The Bengals placed Iosivas (thumb) on injured reserve Saturday.",
+         "text": "Iosivas is having surgery to repair a torn ligament in his thumb, necessitating his move to injured reserve. As such, he will not be allowed to play for at least the next four games, so the earliest Iosivas can return is Week 8 against the Titans on Sunday, Nov. 1. Ja'Marr Chase and Tee Higgins will continue to serve as the Bengals' top pass catchers, but in Iosivas' absence, there are more offensive snaps available for rookie fourth-rounder Colbie Young, Dohnte Meyers and Ke'Shawn Williams.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4368003/injuries/639301?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "13",
+       "name": "Day-To-Day",
+       "type": "day-to-day",
+       "abbreviation": "Day-To-Day"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "5",
+      "name": "INJURY_STATUS_IR",
+      "description": "Injured Reserve",
+      "abbreviation": "IR"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "IR",
+       "abbreviation": "IR"
+      },
+      "type": "Thumb",
+      "location": "Arm",
+      "detail": "Surgery",
+      "side": "Not Specified",
+      "returnDate": "2026-11-01"
+     }
+    },
+    {
+     "id": "639764",
+     "longComment": "Hudson caught both of his targets for 13 yards in Sunday's loss to the Steelers. The 31-year-old tight end has appeared in two games this season, securing all three of his targets for 17 yards. The Bengals like to use multiple tight ends, and Hudson played behind both Drew Sample and Mike Gesicki but ahead of Erick All against Pittsburgh. Hudson would likely need an injury to Gesicki to become relevant in fantasy.",
+     "shortComment": "Hudson reverted to the Bengals' practice squad Monday, per the NFL's transaction log.",
+     "status": "Active",
+     "date": "2026-09-29T01:04Z",
+     "athlete": {
+      "firstName": "Tanner",
+      "lastName": "Hudson",
+      "displayName": "Tanner Hudson",
+      "shortName": "T. Hudson",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/3050481/tanner-hudson",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "7",
+       "name": "Tight End",
+       "displayName": "Tight End",
+       "abbreviation": "TE",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CIN",
+       "displayName": "Cincinnati Bengals"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639764",
+         "type": "news",
+         "date": "2026-09-29T01:04Z",
+         "headline": "Hudson reverted to the Bengals' practice squad Monday, per the NFL's transaction log.",
+         "text": "Hudson caught both of his targets for 13 yards in Sunday's loss to the Steelers. The 31-year-old tight end has appeared in two games this season, securing all three of his targets for 17 yards. The Bengals like to use multiple tight ends, and Hudson played behind both Drew Sample and Mike Gesicki but ahead of Erick All against Pittsburgh. Hudson would likely need an injury to Gesicki to become relevant in fantasy.",
+         "source": "RotoWire"
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "0",
+      "name": "INJURY_STATUS_ACTIVE",
+      "description": "active",
+      "abbreviation": "A"
+     }
+    },
+    {
+     "id": "-2018967",
+     "longComment": "out",
+     "shortComment": "out",
+     "status": "Out",
+     "date": "2026-09-28T18:19Z",
+     "athlete": {
+      "firstName": "B.J.",
+      "lastName": "Hill",
+      "displayName": "B.J. Hill",
+      "shortName": "B.J. Hill",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/3116748/bj-hill",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "32",
+       "name": "Defensive Tackle",
+       "displayName": "Defensive Tackle",
+       "abbreviation": "DT",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "CIN",
+       "displayName": "Cincinnati Bengals"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2018967",
+         "type": "news",
+         "date": "2026-09-28T18:19Z",
+         "headline": "out",
+         "text": "out",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/3116748/injuries/-2018967?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Achilles",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-10-04"
+     }
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "displayName": "Denver Broncos",
+   "injuries": [
+    {
+     "id": "-2019004",
+     "longComment": "out",
+     "shortComment": "out",
+     "status": "Out",
+     "date": "2026-09-28T18:25Z",
+     "athlete": {
+      "firstName": "Marvin",
+      "lastName": "Mims Jr.",
+      "displayName": "Marvin Mims Jr.",
+      "shortName": "M. Mims Jr.",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4686472/marvin-mims-jr",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "1",
+       "name": "Wide Receiver",
+       "displayName": "Wide Receiver",
+       "abbreviation": "WR",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "DEN",
+       "displayName": "Denver Broncos"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "-2019004",
+         "type": "news",
+         "date": "2026-09-28T18:25Z",
+         "headline": "out",
+         "text": "out",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4686472/injuries/-2019004?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "4",
+      "name": "INJURY_STATUS_OUT",
+      "description": "out",
+      "abbreviation": "O"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "QUESTIONABLE",
+       "abbreviation": "QUESTIONABLE"
+      },
+      "type": "Foot",
+      "location": "Leg",
+      "detail": "Not Specified",
+      "side": "Not Specified",
+      "returnDate": "2026-10-04"
+     }
+    },
+    {
+     "id": "639305",
+     "longComment": "Coleman has been diagnosed with a high-ankle sprain and was unable to practice all week. He'll now go on IR and will be required to miss at least four games, meaning the earliest he can return is Week 7 against the Cardinals on Sunday, Oct. 25. With Coleman sidelined, Tyler Badie could see an uptick in offensive snaps as the third option in the Broncos' backfield behind J.K. Dobbins and RJ Harvey.",
+     "shortComment": "Coleman (ankle) is being placed on injured reserve Saturday, Adam Schefter of ESPN reports.",
+     "status": "Injured Reserve",
+     "date": "2026-09-26T20:36Z",
+     "athlete": {
+      "firstName": "Jonah",
+      "lastName": "Coleman",
+      "displayName": "Jonah Coleman",
+      "shortName": "J. Coleman",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/4702555/jonah-coleman",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "9",
+       "name": "Running Back",
+       "displayName": "Running Back",
+       "abbreviation": "RB",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "DEN",
+       "displayName": "Denver Broncos"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639305",
+         "type": "news",
+         "date": "2026-09-26T20:36Z",
+         "headline": "Coleman (ankle) is being placed on injured reserve Saturday, Adam Schefter of ESPN reports.",
+         "text": "Coleman has been diagnosed with a high-ankle sprain and was unable to practice all week. He'll now go on IR and will be required to miss at least four games, meaning the earliest he can return is Week 7 against the Cardinals on Sunday, Oct. 25. With Coleman sidelined, Tyler Badie could see an uptick in offensive snaps as the third option in the Broncos' backfield behind J.K. Dobbins and RJ Harvey.",
+         "source": "RotoWire",
+         "injury": {
+          "$ref": "http://sports.core.api.espn.pvt/v2/sports/football/leagues/nfl/seasons/2026/athletes/4702555/injuries/639305?lang=en&region=us"
+         }
+        }
+       ]
+      },
+      "status": {
+       "id": "13",
+       "name": "Day-To-Day",
+       "type": "day-to-day",
+       "abbreviation": "Day-To-Day"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "5",
+      "name": "INJURY_STATUS_IR",
+      "description": "Injured Reserve",
+      "abbreviation": "IR"
+     },
+     "details": {
+      "fantasyStatus": {
+       "description": "IR",
+       "abbreviation": "IR"
+      },
+      "type": "Ankle",
+      "location": "Leg",
+      "detail": "Sprain",
+      "side": "Not Specified",
+      "returnDate": "2026-10-25"
+     }
+    },
+    {
+     "id": "639718",
+     "longComment": "With the Broncos trailing 16-0 in the first half, coach Sean Payton went for two after each of the team's first two touchdowns instead of using Lutz for the point-after attempts. Prior to that, Lutz missed a 43-yard field goal try when he hit the left upright. On the season, Lutz has attempted just four field goals and five extra points, making him an uninspiring fantasy kicker.",
+     "shortComment": "Lutz missed his one field-goal attempt and went 2-for-2 on PATs in Sunday's 30-26 win over the Rams.",
+     "status": "Active",
+     "date": "2026-09-28T23:30Z",
+     "athlete": {
+      "firstName": "Wil",
+      "lastName": "Lutz",
+      "displayName": "Wil Lutz",
+      "shortName": "W. Lutz",
+      "links": [
+       {
+        "language": "en-US",
+        "rel": [
+         "playercard",
+         "desktop",
+         "athlete"
+        ],
+        "href": "https://www.espn.com/nfl/player/_/id/2985659/wil-lutz",
+        "text": "Player Card",
+        "shortText": "Player Card",
+        "isExternal": false,
+        "isPremium": false
+       }
+      ],
+      "position": {
+       "id": "22",
+       "name": "Place kicker",
+       "displayName": "Place Kicker",
+       "abbreviation": "PK",
+       "leaf": true
+      },
+      "team": {
+       "abbreviation": "DEN",
+       "displayName": "Denver Broncos"
+      },
+      "notes": {
+       "items": [
+        {
+         "id": "639718",
+         "type": "news",
+         "date": "2026-09-28T23:30Z",
+         "headline": "Lutz missed his one field-goal attempt and went 2-for-2 on PATs in Sunday's 30-26 win over the Rams.",
+         "text": "With the Broncos trailing 16-0 in the first half, coach Sean Payton went for two after each of the team's first two touchdowns instead of using Lutz for the point-after attempts. Prior to that, Lutz missed a 43-yard field goal try when he hit the left upright. On the season, Lutz has attempted just four field goals and five extra points, making him an uninspiring fantasy kicker.",
+         "source": "RotoWire"
+        }
+       ]
+      },
+      "status": {
+       "id": "1",
+       "name": "Active",
+       "type": "active",
+       "abbreviation": "Active"
+      }
+     },
+     "source": {
+      "id": "1",
+      "description": "basic/manual",
+      "state": "basic"
+     },
+     "type": {
+      "id": "0",
+      "name": "INJURY_STATUS_ACTIVE",
+      "description": "active",
+      "abbreviation": "A"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,222 @@
+---
+import LabLayout from '@lab/LabLayout.astro';
+import { labUrl } from '@lab/url';
+---
+
+<LabLayout slug="injuries">
+  <section id="app" class="max-w-5xl mx-auto px-6 py-12 font-mono" data-endpoint={labUrl('injuries', 'api/feed')}>
+    <h1 class="text-3xl font-bold text-accent-yellow">Injury Report<span class="text-accent-green">.</span></h1>
+    <p class="mt-1 text-sm text-text-muted">// fantasy-relevant NFL injuries</p>
+
+    <p id="status-line" class="mt-6 text-sm text-text-muted">Loading&hellip;</p>
+
+    <div id="controls" class="hidden mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-wrap items-center gap-3">
+        <div id="pos-chips" class="flex flex-wrap gap-1" role="group" aria-label="Filter by position"></div>
+        <div id="status-chips" class="flex flex-wrap gap-1" role="group" aria-label="Filter by status"></div>
+      </div>
+      <input
+        id="search"
+        type="search"
+        placeholder="search name or team"
+        class="bg-bg-surface text-text-primary text-sm px-3 py-1.5 rounded-sm border border-bg-surface focus:border-accent-green focus:outline-none"
+      />
+    </div>
+
+    <div id="list" class="mt-6 text-sm divide-y divide-bg-surface"></div>
+
+    <p class="mt-10 text-xs text-text-muted">Data: ESPN (unofficial feed — may break).</p>
+  </section>
+</LabLayout>
+
+<script>
+  import { timeAgo } from './_lib/time';
+  import type { InjuryRow, Pos } from './_lib/espn';
+  import type { Feed } from './_lib/feed';
+
+  const root = document.getElementById('app') as HTMLElement;
+  const endpoint = root.dataset.endpoint!;
+  const statusLine = document.getElementById('status-line') as HTMLParagraphElement;
+  const controls = document.getElementById('controls') as HTMLDivElement;
+  const posChips = document.getElementById('pos-chips') as HTMLDivElement;
+  const statusChips = document.getElementById('status-chips') as HTMLDivElement;
+  const search = document.getElementById('search') as HTMLInputElement;
+  const list = document.getElementById('list') as HTMLDivElement;
+
+  const POSITIONS: string[] = ['All', 'QB', 'RB', 'WR', 'TE', 'K'];
+  const STATUSES: string[] = ['All', 'Out', 'Doubtful', 'Questionable', 'IR'];
+
+  let rows: InjuryRow[] = [];
+  let fetchedAt = '';
+  let stale = false;
+  let posFilter: Pos | 'All' = 'All';
+  let statusFilter = 'All';
+  let query = '';
+
+  function chipClass(active: boolean): string {
+    const base = 'text-xs px-2 py-1 rounded-full border transition-colors';
+    return active ? `${base} border-accent-green text-accent-green` : `${base} border-bg-surface text-text-muted`;
+  }
+
+  function buildChips(container: HTMLDivElement, options: string[], onSelect: (value: string) => void): void {
+    container.textContent = '';
+    const buttons: HTMLButtonElement[] = [];
+    for (const opt of options) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = opt;
+      btn.className = chipClass(opt === 'All');
+      btn.addEventListener('click', () => {
+        for (const b of buttons) b.className = chipClass(b === btn);
+        onSelect(opt);
+      });
+      buttons.push(btn);
+      container.appendChild(btn);
+    }
+  }
+
+  function statusColor(status: string): string {
+    if (status === 'Out') return 'text-red-400';
+    if (status === 'IR') return 'text-red-400/70';
+    if (status === 'Doubtful') return 'text-orange-400';
+    if (status === 'Questionable') return 'text-accent-yellow';
+    return 'text-text-muted';
+  }
+
+  function matches(row: InjuryRow): boolean {
+    if (posFilter !== 'All' && row.pos !== posFilter) return false;
+    if (statusFilter !== 'All' && row.status !== statusFilter) return false;
+    if (query) {
+      const q = query.toLowerCase();
+      if (!row.name.toLowerCase().includes(q) && !row.team.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }
+
+  function renderStatusLine(filteredCount: number): void {
+    const age = timeAgo(fetchedAt, new Date());
+    const ageText = age === 'just now' ? age : `${age} ago`;
+    statusLine.textContent = `Updated ${ageText} · ${filteredCount} player${filteredCount === 1 ? '' : 's'}`;
+    if (stale) {
+      statusLine.append(' · ESPN unreachable, showing last good data');
+    }
+  }
+
+  function renderRow(row: InjuryRow): HTMLDivElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'py-2 cursor-pointer';
+
+    const summary = document.createElement('div');
+    summary.className = 'flex flex-wrap items-baseline gap-x-3 gap-y-1';
+
+    const pos = document.createElement('span');
+    pos.className = 'w-8 shrink-0 text-text-muted';
+    pos.textContent = row.pos;
+
+    const nameEl = document.createElement(row.url ? 'a' : 'span') as HTMLAnchorElement | HTMLSpanElement;
+    nameEl.textContent = row.name;
+    nameEl.className = 'text-text-primary hover:text-accent-yellow';
+    if (row.url && nameEl instanceof HTMLAnchorElement) {
+      nameEl.href = row.url;
+      nameEl.target = '_blank';
+      nameEl.rel = 'noopener noreferrer';
+    }
+
+    const team = document.createElement('span');
+    team.className = 'text-text-muted';
+    team.textContent = row.team;
+
+    const status = document.createElement('span');
+    status.className = statusColor(row.status);
+    status.textContent = row.status;
+
+    const age = document.createElement('span');
+    age.className = 'text-text-muted text-xs';
+    age.textContent = timeAgo(row.updated, new Date());
+
+    const blurb = document.createElement('span');
+    blurb.className = 'w-full sm:w-auto sm:flex-1 sm:min-w-0 sm:truncate text-text-muted';
+    blurb.textContent = row.blurb;
+
+    summary.append(pos, nameEl, team, status, age, blurb);
+
+    const detail = document.createElement('div');
+    detail.className = 'hidden pl-11 pt-1 pb-2 text-xs text-text-muted';
+
+    const detailBlurb = document.createElement('p');
+    detailBlurb.textContent = row.blurb;
+    detail.appendChild(detailBlurb);
+
+    if (row.injury || row.returnDate) {
+      const meta = document.createElement('p');
+      meta.className = 'mt-1';
+      const parts = [row.injury, row.returnDate ? `Est. return ${row.returnDate}` : ''].filter(Boolean);
+      meta.textContent = parts.join(' · ');
+      detail.appendChild(meta);
+    }
+
+    wrap.addEventListener('click', () => {
+      detail.classList.toggle('hidden');
+    });
+
+    wrap.append(summary, detail);
+    return wrap;
+  }
+
+  function render(): void {
+    const filtered = rows.filter(matches);
+    renderStatusLine(filtered.length);
+    list.textContent = '';
+    if (filtered.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'py-6 text-text-muted';
+      empty.textContent = 'No players match.';
+      list.appendChild(empty);
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const row of filtered) frag.appendChild(renderRow(row));
+    list.appendChild(frag);
+  }
+
+  function showError(): void {
+    statusLine.textContent = 'ESPN feed unavailable right now.';
+    controls.classList.add('hidden');
+    list.textContent = '';
+  }
+
+  async function load(): Promise<void> {
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        showError();
+        return;
+      }
+      const feed = (await res.json()) as Feed;
+      rows = feed.rows;
+      fetchedAt = feed.fetchedAt;
+      stale = Boolean(feed.stale);
+
+      buildChips(posChips, POSITIONS, (value) => {
+        posFilter = value as Pos | 'All';
+        render();
+      });
+      buildChips(statusChips, STATUSES, (value) => {
+        statusFilter = value;
+        render();
+      });
+
+      controls.classList.remove('hidden');
+      render();
+    } catch {
+      showError();
+    }
+  }
+
+  search.addEventListener('input', () => {
+    query = search.value;
+    render();
+  });
+
+  load();
+</script>
