@@ -30,7 +30,7 @@ terminal or paste real values; without them Notion posts and Redis don't load lo
 - **Projects page**: GitHub REST API at build time (public, no token). Pin repos in `src/data/featured.ts`.
 - **Resume data**: `src/data/resume.ts` is the single source for the About page, the homepage terminal,
   and the footer's contact links.
-- **Reading list**: `src/data/books.ts` → `/reading`.
+- **Reading list**: Notion database → custom Content Layer loader (`src/lib/notionBooksLoader.ts`) at build time.
 - **Lab**: shared code in `src/lab/` (`@lab/*`), projects in `src/pages/lab/<slug>/`, Upstash Redis for
   KV + rate limiting.
 - **SEO**: canonical + OG tags in `BaseLayout.astro` (default image `public/og-default.png`),
@@ -41,10 +41,10 @@ terminal or paste real values; without them Notion posts and Redis don't load lo
 ```
 src/
   components/   Nav, Footer, Terminal (homepage CLI), ProjectCard, BlogCard, LabCard
-  data/         resume.ts, books.ts, featured.ts
+  data/         resume.ts, featured.ts
   lab/          meta, registry, url, api, kv, rateLimit, slug-rules.mjs, LabLayout.astro (+ tests)
   layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
-  lib/          notionLoader, slug, readTime (+ tests)
+  lib/          notionLoader, notionBooks, notionBooksLoader, slug, readTime (+ tests)
   pages/        index, about, projects, reading, 404, blog/, lab/ (index + hello/)
   content.config.ts  blog collection → Notion loader
 scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs (+ tests)
@@ -58,7 +58,7 @@ templates/lab/  basic/, api/ (used by `npm run new`)
 - Nightly rebuild (midnight US Central) picks up new Notion posts: `.github/workflows/nightly-rebuild.yml`
   POSTs the `VERCEL_DEPLOY_HOOK` secret. Run it manually from GitHub Actions to publish immediately.
 - Env vars live in Vercel → Settings → Environment Variables (Production + Preview):
-  `NOTION_TOKEN`, `NOTION_DATABASE_ID`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
+  `NOTION_TOKEN`, `NOTION_DATABASE_ID`, `NOTION_BOOKS_DATABASE_ID`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 - Domain and DNS are on Vercel: `isaacdessert.dev` + wildcard `*.isaacdessert.dev`.
 
 ## Content workflows
@@ -69,7 +69,10 @@ templates/lab/  basic/, api/ (used by `npm run new`)
   page's creation date.
 - **Resume / terminal**: edit `src/data/resume.ts` (also feeds the footer's contact links). Terminal-only
   copy (whoami blurb) is in `Terminal.astro`.
-- **Reading list**: edit `src/data/books.ts` (`status: 'reading' | 'read' | 'want'`).
+- **Reading list**: add a row to the Notion "Reading List" database (Title, Author, Status —
+  `Reading`/`Read`/`Want` (Select), Year, Take, Link). Live after the nightly rebuild, or run the
+  workflow. Sort order is year descending then title A→Z; the title column is found by property type,
+  not by name.
 - **Featured repos**: add names to `src/data/featured.ts`.
 
 ## Lab platform
@@ -138,10 +141,9 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
 ## Status & TODOs
 
-**Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains, `npm audit` clean). Next: reading list from Notion.
+**Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains, `npm audit` clean).
 
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
-- [ ] Reading list from a Notion database (replaces `src/data/books.ts`; needs `NOTION_BOOKS_DATABASE_ID`)
 - [ ] Optional: pin `engines.node` to `>=22.12.0 <25` so Vercel doesn't auto-jump Node majors
 - [ ] Optional: replace deprecated `z.ZodTypeAny` in `src/lab/api.ts`; add a type-check step (`astro check`)
 - [ ] Optional: single source for the site origin
