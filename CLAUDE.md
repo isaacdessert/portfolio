@@ -20,9 +20,10 @@ terminal or paste real values; without them Notion posts and Redis don't load lo
 
 ## Architecture
 
-- **Astro 5, static by default**, deployed on **Vercel** via `@astrojs/vercel`. A page/endpoint with
+- **Astro 7, static by default**, deployed on **Vercel** via `@astrojs/vercel` 11 (Node ≥ 22.12; Vercel
+  builds on 24.x). A page/endpoint with
   `export const prerender = false` becomes a serverless function (only lab APIs do this today).
-- **Tailwind 3** (+ typography plugin), self-hosted fonts via Fontsource, imported in `BaseLayout.astro`.
+- **Tailwind 3** (+ typography plugin) via `postcss.config.mjs` (no `@astrojs/tailwind`), self-hosted fonts via Fontsource, imported in `BaseLayout.astro`.
   Weights imported: Inter 400/500/600/700 (500 is used by the typography plugin's links), JetBrains Mono
   400/600/700. A new weight needs its import.
 - **Blog**: Notion database → custom Content Layer loader (`src/lib/notionLoader.ts`) at build time.
@@ -45,7 +46,7 @@ src/
   layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
   lib/          notionLoader, slug, readTime (+ tests)
   pages/        index, about, projects, reading, blog/, lab/ (index + hello/)
-  content/      config.ts (blog collection → Notion loader)
+  content.config.ts  blog collection → Notion loader
 scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs (+ tests)
 templates/lab/  basic/, api/ (used by `npm run new`)
 ```
@@ -109,6 +110,8 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
   Harmless; canonicals point at the apex.
 - **Astro's origin check** 403s bodiless/form POSTs on Vercel ("Cross-site POST form submissions are
   forbidden") — send JSON.
+- `compressHTML: true` in `astro.config.mjs`: Astro 7 defaults to `'jsx'` whitespace stripping; kept
+  `true` to preserve spacing.
 - The site origin is set in two places: `site` in `astro.config.mjs` and `SITE_ORIGIN` in `src/lab/url.ts`.
 - `vercel link` appends `.vercel`/`.env*` to `.gitignore`; the existing rules already cover them — drop
   the additions.
@@ -131,11 +134,11 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
 ## Status & TODOs
 
-**Status:** Live. Cleanup phase 1 done (branch `chore/cleanup`); phase 2 (Astro 7 upgrade for security
-advisories) next.
+**Status:** Live on Astro 7.
 
-- [ ] Astro 5 → 7 + `@astrojs/vercel` 11 (fixes open Astro advisories; needs Node ≥ 22.12 on Vercel;
-      replaces `@astrojs/tailwind`)
+- [ ] Decide 404 handling: Adapter 11 routes unmatched URLs to the function, which serves Astro's
+      default 404 page (was Vercel's platform 404)
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
 - [ ] Optional: unknown subdomains → 404 instead of the main site
 - [ ] Optional: single source for the site origin
+- [ ] Optional: Tailwind 4 migration (visual-risk; separate)

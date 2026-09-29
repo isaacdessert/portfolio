@@ -1,5 +1,6 @@
-import { defineCollection, z } from 'astro:content';
-import { notionLoader } from '../lib/notionLoader';
+import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
+import { notionLoader } from './lib/notionLoader';
 
 const blog = defineCollection({
   loader: notionLoader(),
