@@ -16,4 +16,9 @@ export default defineConfig({
   adapter: vercel(),
   // Astro 7 defaults to 'jsx' whitespace stripping; true preserves pre-upgrade spacing.
   compressHTML: true,
+  // Vite 7+ targets baseline-widely-available (Lightning CSS emits range media queries);
+  // keep the Vite 6 default so older Safari still gets min-width breakpoints.
+  vite: {
+    build: { cssTarget: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'] },
+  },
 });

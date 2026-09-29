@@ -45,7 +45,7 @@ src/
   lab/          meta, registry, url, api, kv, rateLimit, slug-rules.mjs, LabLayout.astro (+ tests)
   layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
   lib/          notionLoader, slug, readTime (+ tests)
-  pages/        index, about, projects, reading, blog/, lab/ (index + hello/)
+  pages/        index, about, projects, reading, 404, blog/, lab/ (index + hello/)
   content.config.ts  blog collection → Notion loader
 scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs (+ tests)
 templates/lab/  basic/, api/ (used by `npm run new`)
@@ -106,12 +106,16 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
   config, and rewrites run after static files), so `vercel.json` only pins `buildCommand`. Passthrough:
   `/_astro/ /_image /_server-islands/ /_vercel/ /lab/ /favicon.svg /robots.txt /sitemap* /og-default.png`.
   Production only.
-- **Subdomain misses fall back** to the main site instead of 404 (`nope.isaacdessert.dev` → homepage).
-  Harmless; canonicals point at the apex.
+- **404s** are the prerendered, noindex `src/pages/404.astro`: the adapter appends a `^/.*$ → /404.html`
+  catch-all after the filesystem check (static, no function). Unknown subdomains (`nope.isaacdessert.dev`)
+  rewrite to `/lab/nope/`, miss the filesystem, and should land on it too (route order checked in
+  config.json; not yet confirmed on production).
 - **Astro's origin check** 403s bodiless/form POSTs on Vercel ("Cross-site POST form submissions are
   forbidden") — send JSON.
 - `compressHTML: true` in `astro.config.mjs`: Astro 7 defaults to `'jsx'` whitespace stripping; kept
   `true` to preserve spacing.
+- `vite.build.cssTarget` is pinned to Vite 6's default (`es2020, edge88, firefox78, chrome87, safari14`):
+  Vite 7+'s baseline target makes Lightning CSS emit range media queries that older Safari ignores.
 - The site origin is set in two places: `site` in `astro.config.mjs` and `SITE_ORIGIN` in `src/lab/url.ts`.
 - `vercel link` appends `.vercel`/`.env*` to `.gitignore`; the existing rules already cover them — drop
   the additions.
@@ -136,9 +140,7 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
 **Status:** Live on Astro 7.
 
-- [ ] Decide 404 handling: Adapter 11 routes unmatched URLs to the function, which serves Astro's
-      default 404 page (was Vercel's platform 404)
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
-- [ ] Optional: unknown subdomains → 404 instead of the main site
+- [ ] Confirm on production that unknown subdomains now serve the 404 page
 - [ ] Optional: single source for the site origin
 - [ ] Optional: Tailwind 4 migration (visual-risk; separate)
