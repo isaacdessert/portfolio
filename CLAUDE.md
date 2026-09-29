@@ -136,6 +136,15 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
 - **Social platforms cache OG previews** aggressively (per-URL, keyed off the URL not the image
   content). After changing a page's title/description or its card, use LinkedIn's Post Inspector
   (or the equivalent debugger for the platform you're checking) to force a refetch before resharing.
+- **`npm audit`: 2 accepted moderate findings**, from `satori`@^0.33 → `@shuding/opentype.js` →
+  `fflate` 0.7.x. `fflate` *is* actively used here — Satori's font parser calls it to decompress
+  WOFF table data — but the advisory (GHSA-px8p-9vwx-vf98) is a malformed-ZIP64 infinite loop in
+  `fflate`'s `unzipSync`, a path nothing in this codebase calls; our only input to it is our own
+  bundled Fontsource `.woff` files, read at build time. Accepted, no action needed. Do **not** try
+  to silence it with an `overrides` pin to `fflate@^0.8.x` — confirmed (2026-09-29) that it breaks
+  Satori's WOFF glyph decoding: every OG card renders with all text as tofu/replacement-glyph boxes,
+  and none of the existing tests catch it (`card.test.ts` only checks the PNG signature and pixel
+  dimensions, not that glyphs render).
 
 ## Design tokens
 
@@ -161,9 +170,6 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 **Status:** Live on Astro 7 (verified in production 2026-09-29: all pages, lab subdomain, branded 404 for unknown paths/subdomains, `npm audit` clean).
 
 - [ ] Verify per-page OG cards on production (LinkedIn Post Inspector) after the first deploy of this branch
-- [ ] `npm audit`: `satori`@^0.33 pulls in `fflate` 0.7.x (moderate, malformed-zip DoS) via its
-      opentype.js dependency — unused code path for us (we only load `.woff`, not zipped font
-      collections); revisit once satori bumps its own `fflate` pin
 - [ ] Set a monthly budget/cap in Upstash (and on any paid API before a lab endpoint uses it)
 - [ ] Optional: pin `engines.node` to `>=22.12.0 <25` so Vercel doesn't auto-jump Node majors
 - [ ] Optional: replace deprecated `z.ZodTypeAny` in `src/lab/api.ts`; add a type-check step (`astro check`)
