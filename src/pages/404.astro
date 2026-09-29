@@ -1,13 +1,16 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+
+// Served on any host (incl. lab subdomains), so every link is absolute.
+const home = new URL('/', Astro.site).href;
 ---
 
-<BaseLayout title="Not found" noindex>
+<BaseLayout title="Not found" noindex absoluteLinks>
   <div class="max-w-3xl mx-auto px-6 py-20">
     <header class="mb-10">
       <h1 class="section-heading">404</h1>
       <p class="section-subheading">// that page doesn't exist</p>
     </header>
-    <a href="/" class="btn-primary">Back home</a>
+    <a href={home} class="btn-primary">Back home</a>
   </div>
 </BaseLayout>
