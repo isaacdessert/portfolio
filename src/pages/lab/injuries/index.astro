@@ -75,6 +75,17 @@ import { labUrl } from '@lab/url';
     }
   }
 
+  /** Defense-in-depth: the parser already drops non-https hrefs, but never trust feed data at render time either. */
+  function toSafeHttpsUrl(href: string | undefined): string | undefined {
+    if (!href) return undefined;
+    try {
+      const url = new URL(href);
+      return url.protocol === 'https:' ? url.href : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   function statusColor(status: string): string {
     if (status === 'Out') return 'text-red-400';
     if (status === 'IR') return 'text-red-400/70';
@@ -113,11 +124,12 @@ import { labUrl } from '@lab/url';
     pos.className = 'w-8 shrink-0 text-text-muted';
     pos.textContent = row.pos;
 
-    const nameEl = document.createElement(row.url ? 'a' : 'span') as HTMLAnchorElement | HTMLSpanElement;
+    const safeHref = toSafeHttpsUrl(row.url);
+    const nameEl = document.createElement(safeHref ? 'a' : 'span') as HTMLAnchorElement | HTMLSpanElement;
     nameEl.textContent = row.name;
     nameEl.className = 'text-text-primary hover:text-accent-yellow';
-    if (row.url && nameEl instanceof HTMLAnchorElement) {
-      nameEl.href = row.url;
+    if (safeHref && nameEl instanceof HTMLAnchorElement) {
+      nameEl.href = safeHref;
       nameEl.target = '_blank';
       nameEl.rel = 'noopener noreferrer';
     }

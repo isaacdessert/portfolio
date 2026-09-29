@@ -93,6 +93,20 @@ describe('parseEspnInjuries — synthetic edge cases', () => {
     expect(row.pos).toBe('K');
   });
 
+  it('passes "Doubtful" through unchanged', () => {
+    const raw = entry({ status: 'Doubtful' });
+    const [row] = parseEspnInjuries({ injuries: [raw] });
+    expect(row.status).toBe('Doubtful');
+  });
+
+  it('drops a javascript: href instead of passing it through as url', () => {
+    const raw = entry();
+    const athlete = (raw.injuries[0] as Record<string, unknown>).athlete as Record<string, unknown>;
+    athlete.links = [{ href: 'javascript:alert(1)' }];
+    const [row] = parseEspnInjuries({ injuries: [raw] });
+    expect(row.url).toBeUndefined();
+  });
+
   it('defaults blurb to empty string when shortComment is missing', () => {
     const raw = entry();
     delete (raw.injuries[0] as Record<string, unknown>).shortComment;

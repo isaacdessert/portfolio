@@ -35,6 +35,17 @@ function buildInjury(details: unknown): string | undefined {
   return type;
 }
 
+/** Only keep https URLs — never pass through javascript:/data:/etc. hrefs from the feed. */
+function toHttpsUrl(href: unknown): string | undefined {
+  if (typeof href !== 'string') return undefined;
+  try {
+    const parsed = new URL(href);
+    return parsed.protocol === 'https:' ? parsed.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Injured fantasy-relevant players, newest first. Throws if the payload doesn't look like ESPN's format. */
 export function parseEspnInjuries(json: unknown): InjuryRow[] {
   if (!json || typeof json !== 'object' || !Array.isArray((json as { injuries?: unknown }).injuries)) {
@@ -43,8 +54,8 @@ export function parseEspnInjuries(json: unknown): InjuryRow[] {
 
   const rows: InjuryRow[] = [];
 
-  for (const team of (json as { injuries: unknown[] }).injuries) {
-    const teamInjuries = (team as { injuries?: unknown[] } | null)?.injuries;
+  for (const teamGroup of (json as { injuries: unknown[] }).injuries) {
+    const teamInjuries = (teamGroup as { injuries?: unknown[] } | null)?.injuries;
     if (!Array.isArray(teamInjuries)) continue;
 
     for (const entry of teamInjuries) {
@@ -78,10 +89,10 @@ export function parseEspnInjuries(json: unknown): InjuryRow[] {
             : undefined,
         updated: typeof e.date === 'string' ? e.date : '',
         blurb: typeof e.shortComment === 'string' ? e.shortComment : '',
-        url: typeof links?.[0]?.href === 'string' ? links[0].href : undefined,
+        url: toHttpsUrl(links?.[0]?.href),
       });
     }
   }
 
-  return rows.sort((a, b) => b.updated.localeCompare(a.updated));
+  return rows.sort((a, b) => Date.parse(b.updated) - Date.parse(a.updated));
 }
