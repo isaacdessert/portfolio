@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { skills, experience, education, contact } from '@/data/resume';
 
 const posts = await getCollection('blog', ({ data }) => !data.draft);
 const recentPosts = posts
@@ -7,11 +8,16 @@ const recentPosts = posts
   .slice(0, 5)
   .map(p => ({
     title: p.data.title,
-    slug: p.slug,
     date: p.data.date.toISOString().split('T')[0],
   }));
 
-const terminalData = JSON.stringify({ posts: recentPosts });
+const terminalData = JSON.stringify({
+  posts: recentPosts,
+  skills,
+  jobs: experience.map(({ title, company, period }) => ({ title, company, period })),
+  education,
+  contact,
+});
 ---
 
 <div class="max-w-2xl w-full mx-auto lg:mx-0">
@@ -120,6 +126,7 @@ const terminalData = JSON.stringify({ posts: recentPosts });
         ['experience',   'Work history'],
         ['education',    'My degree'],
         ['contact',      'How to reach me'],
+        ['blog',         'Recent posts'],
         ['open [page]',  'Navigate — about · projects · blog · lab · home'],
         ['clear',        'Clear the terminal'],
         ['date',         'Current date & time'],
@@ -144,14 +151,7 @@ const terminalData = JSON.stringify({ posts: recentPosts });
 
     skills() {
       appendBlank();
-      const stack = {
-        'Languages': ['TypeScript', 'JavaScript', 'Python', 'Go', 'SQL', 'Kotlin'],
-        'Frontend':  ['React', 'Astro', 'Next.js', 'Tailwind CSS'],
-        'Backend':   ['Node.js', 'Java', 'Spring', 'PostgreSQL', 'Redis', 'MongoDB'],
-        'DevOps':    ['Docker', 'Kubernetes', 'AWS', 'Terraform', 'Ansible'],
-        'Tools':     ['Git', 'GitHub', 'GitLab', 'Shell', 'Claude Code', 'Gemini CLI', 'Junie', 'IntelliJ'],
-      };
-      Object.entries(stack).forEach(([cat, items]) => {
+      Object.entries(data.skills).forEach(([cat, items]) => {
         appendLine(`  ${m(cat.padEnd(12))} ${items.map(i => g(i)).join(m(' · '))}`);
       });
       appendBlank();
@@ -159,14 +159,7 @@ const terminalData = JSON.stringify({ posts: recentPosts });
 
     experience() {
       appendBlank();
-      const jobs = [
-        { title: 'Lead Software Engineer',    company: 'Shipium',   period: 'Aug 2025 — Present' },
-        { title: 'Senior Software Engineer',  company: 'Shipium',   period: 'Apr 2024 — Aug 2025' },
-        { title: 'Software Engineer',         company: 'Shipium',   period: 'Aug 2022 — Apr 2024' },
-        { title: 'Software Engineer',         company: 'GameStop',  period: 'Dec 2021 — Jul 2022' },
-        { title: 'Software Engineer',         company: 'Dynatrace', period: 'May 2020 — Nov 2021' },
-      ];
-      jobs.forEach(job => {
+      data.jobs.forEach(job => {
         appendLine(`  ${y(job.title)}`);
         appendLine(`  ${g(job.company)} ${m('·')} ${m(job.period)}`);
         appendBlank();
@@ -176,8 +169,8 @@ const terminalData = JSON.stringify({ posts: recentPosts });
 
     education() {
       appendBlank();
-      appendLine(`  ${y('B.S. Computer Science')}`);
-      appendLine(`  ${g('Grand Valley State University')} ${m('·')} ${m('2020')}`);
+      appendLine(`  ${y(data.education.degree)}`);
+      appendLine(`  ${g(data.education.school)} ${m('·')} ${m(data.education.year)}`);
       appendBlank();
     },
 
@@ -199,9 +192,9 @@ const terminalData = JSON.stringify({ posts: recentPosts });
 
     contact() {
       appendBlank();
-      appendLine(`  ${y('Email')}    ${g('isaacjdessert@gmail.com')}`);
-      appendLine(`  ${y('GitHub')}   ${g('github.com/isaacdessert')}`);
-      appendLine(`  ${y('LinkedIn')} ${g('linkedin.com/in/isaacdessert')}`);
+      appendLine(`  ${y('Email')}    ${g(data.contact.email)}`);
+      appendLine(`  ${y('GitHub')}   ${g(data.contact.github.replace('https://', ''))}`);
+      appendLine(`  ${y('LinkedIn')} ${g(data.contact.linkedin.replace('https://', ''))}`);
       appendBlank();
     },
 
@@ -314,5 +307,5 @@ const terminalData = JSON.stringify({ posts: recentPosts });
   body.addEventListener('click', () => input.focus());
 
   boot();
-  input.focus();
+  if (window.matchMedia('(pointer: fine)').matches) input.focus({ preventScroll: true });
 </script>

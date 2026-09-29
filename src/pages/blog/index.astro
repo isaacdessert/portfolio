@@ -2,16 +2,11 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BlogCard from '@/components/BlogCard.astro';
 import { getCollection } from 'astro:content';
+import { estimateReadTime } from '@/lib/readTime';
 
 const allPosts = await getCollection('blog', ({ data }) => !data.draft);
 
 allPosts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-
-// Estimate read time: ~200 words per minute
-function estimateReadTime(body: string): number {
-  const words = body.trim().split(/\s+/).length;
-  return Math.max(1, Math.round(words / 200));
-}
 ---
 
 <BaseLayout

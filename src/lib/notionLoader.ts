@@ -54,7 +54,7 @@ export function notionLoader(): Loader {
         const dateStr =
           dateProp?.type === 'date' && dateProp.date?.start
             ? dateProp.date.start
-            : new Date().toISOString().split('T')[0];
+            : page.created_time.slice(0, 10);
 
         const tagsProp = page.properties['Tags'];
         const tags =
