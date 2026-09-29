@@ -1,4 +1,5 @@
 ---
+import { contact } from '@/data/resume';
 const year = new Date().getFullYear();
 ---
 
@@ -10,7 +11,7 @@ const year = new Date().getFullYear();
 
     <div class="flex items-center gap-6">
       <a
-        href="https://github.com/isaacdessert"
+        href={contact.github}
         target="_blank"
         rel="noopener noreferrer"
         class="text-text-muted hover:text-accent-yellow transition-colors"
@@ -22,7 +23,7 @@ const year = new Date().getFullYear();
       </a>
 
       <a
-        href="https://linkedin.com/in/isaacdessert"
+        href={contact.linkedin}
         target="_blank"
         rel="noopener noreferrer"
         class="text-text-muted hover:text-accent-yellow transition-colors"
@@ -34,7 +35,7 @@ const year = new Date().getFullYear();
       </a>
 
       <a
-        href="mailto:isaacjdessert@gmail.com"
+        href={`mailto:${contact.email}`}
         class="text-text-muted hover:text-accent-yellow transition-colors"
         aria-label="Email"
       >

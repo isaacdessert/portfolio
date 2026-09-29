@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const LAB_SUBDOMAIN_ROUTE = {
-  src: '^/((?!_astro/|_image|_server-islands/|_vercel/|lab/|favicon\\.svg).*)$',
+  src: '^/((?!_astro/|_image|_server-islands/|_vercel/|lab/|favicon\\.svg|robots\\.txt|sitemap|og-default\\.png).*)$',
   has: [{ type: 'host', value: '(?<slug>(?!www\\.)[a-z0-9-]+)\\.isaacdessert\\.dev' }],
   dest: '/lab/$slug/$1',
 };

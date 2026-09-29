@@ -22,27 +22,31 @@ terminal or paste real values; without them Notion posts and Redis don't load lo
 
 - **Astro 5, static by default**, deployed on **Vercel** via `@astrojs/vercel`. A page/endpoint with
   `export const prerender = false` becomes a serverless function (only lab APIs do this today).
-- **Tailwind 3** (+ typography plugin), self-hosted fonts via Fontsource, imported in `BaseLayout.astro`:
-  Inter 400/600/700, JetBrains Mono 400/600/700. Using a new weight (e.g. `font-medium`) means adding its import.
+- **Tailwind 3** (+ typography plugin), self-hosted fonts via Fontsource, imported in `BaseLayout.astro`.
+  Weights imported: Inter 400/500/600/700 (500 is used by the typography plugin's links), JetBrains Mono
+  400/600/700. A new weight needs its import.
 - **Blog**: Notion database → custom Content Layer loader (`src/lib/notionLoader.ts`) at build time.
 - **Projects page**: GitHub REST API at build time (public, no token). Pin repos in `src/data/featured.ts`.
-- **Resume data**: `src/data/resume.ts` is the single source for the About page and the homepage terminal.
+- **Resume data**: `src/data/resume.ts` is the single source for the About page, the homepage terminal,
+  and the footer's contact links.
 - **Reading list**: `src/data/books.ts` → `/reading`.
 - **Lab**: shared code in `src/lab/` (`@lab/*`), projects in `src/pages/lab/<slug>/`, Upstash Redis for
   KV + rate limiting.
 - **SEO**: canonical + OG tags in `BaseLayout.astro` (default image `public/og-default.png`),
-  `@astrojs/sitemap`, `public/robots.txt`.
+  `@astrojs/sitemap`, `public/robots.txt`. `og-default.png` is 1200×630, generated once with sharp
+  from an SVG (no script kept); `unlisted` lab pages are filtered out of the sitemap via
+  `scripts/unlisted-lab.mjs`.
 
 ```
 src/
   components/   Nav, Footer, Terminal (homepage CLI), ProjectCard, BlogCard, LabCard
   data/         resume.ts, books.ts, featured.ts
-  lab/          meta, registry, url, api, kv, rateLimit, LabLayout.astro (+ tests)
+  lab/          meta, registry, url, api, kv, rateLimit, slug-rules.mjs, LabLayout.astro (+ tests)
   layouts/      BaseLayout (shell/SEO; absoluteLinks/noindex/bare props), BlogLayout
   lib/          notionLoader, slug, readTime (+ tests)
   pages/        index, about, projects, reading, blog/, lab/ (index + hello/)
   content/      config.ts (blog collection → Notion loader)
-scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs (+ tests)
+scripts/        new-lab.mjs, lab-isolation.mjs, vercel-routes.mjs, unlisted-lab.mjs (+ tests)
 templates/lab/  basic/, api/ (used by `npm run new`)
 ```
 
@@ -62,7 +66,8 @@ templates/lab/  basic/, api/ (used by `npm run new`)
   **Status = `Published`** (Status must be a *Select* property, not Notion's native Status type). Live
   after the nightly rebuild, or run the workflow. Slug = title lowercased/hyphenated. Missing Date → the
   page's creation date.
-- **Resume / terminal**: edit `src/data/resume.ts`. Terminal-only copy (whoami blurb) is in `Terminal.astro`.
+- **Resume / terminal**: edit `src/data/resume.ts` (also feeds the footer's contact links). Terminal-only
+  copy (whoami blurb) is in `Terminal.astro`.
 - **Reading list**: edit `src/data/books.ts` (`status: 'reading' | 'read' | 'want'`).
 - **Featured repos**: add names to `src/data/featured.ts`.
 
@@ -98,7 +103,8 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
 - **Subdomain routing** is inserted into `.vercel/output/config.json` *before* Vercel's filesystem
   check by `scripts/vercel-routes.mjs`. `vercel.json` `rewrites` can't do it (the adapter writes its own
   config, and rewrites run after static files), so `vercel.json` only pins `buildCommand`. Passthrough:
-  `/_astro/ /_image /_server-islands/ /_vercel/ /lab/ /favicon.svg`. Production only.
+  `/_astro/ /_image /_server-islands/ /_vercel/ /lab/ /favicon.svg /robots.txt /sitemap* /og-default.png`.
+  Production only.
 - **Subdomain misses fall back** to the main site instead of 404 (`nope.isaacdessert.dev` → homepage).
   Harmless; canonicals point at the apex.
 - **Astro's origin check** 403s bodiless/form POSTs on Vercel ("Cross-site POST form submissions are
@@ -125,7 +131,8 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 
 ## Status & TODOs
 
-**Status:** Live. Cleanup phase 1 merged; phase 2 (Astro 7 upgrade for security advisories) next.
+**Status:** Live. Cleanup phase 1 done (branch `chore/cleanup`); phase 2 (Astro 7 upgrade for security
+advisories) next.
 
 - [ ] Astro 5 → 7 + `@astrojs/vercel` 11 (fixes open Astro advisories; needs Node ≥ 22.12 on Vercel;
       replaces `@astrojs/tailwind`)

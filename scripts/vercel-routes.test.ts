@@ -77,6 +77,10 @@ describe('LAB_SUBDOMAIN_ROUTE host/path emulation', () => {
     ['hello.isaacdessert.dev', '/_image?href=x'],
     ['hello.isaacdessert.dev', '/_server-islands/Foo'],
     ['hello.isaacdessert.dev', '/_vercel/insights/script.js'],
+    ['hello.isaacdessert.dev', '/robots.txt'],
+    ['hello.isaacdessert.dev', '/sitemap-index.xml'],
+    ['hello.isaacdessert.dev', '/sitemap-0.xml'],
+    ['hello.isaacdessert.dev', '/og-default.png'],
   ])('does not rewrite %s%s', (host, p) => {
     expect(rewrite(host, p)).toBeNull();
   });
