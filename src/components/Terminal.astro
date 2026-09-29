@@ -127,7 +127,7 @@ const terminalData = JSON.stringify({
         ['education',    'My degree'],
         ['contact',      'How to reach me'],
         ['blog',         'Recent posts'],
-        ['open [page]',  'Navigate — about · projects · blog · lab · home'],
+        ['open [page]',  'Navigate — about · projects · blog · reading · lab · home'],
         ['clear',        'Clear the terminal'],
         ['date',         'Current date & time'],
         ['echo [text]',  'Echo text back'],
@@ -216,11 +216,12 @@ const terminalData = JSON.stringify({
         about:    '/about',
         projects: '/projects',
         blog:     '/blog',
+        reading:  '/reading',
         lab:      '/lab',
         home:     '/',
       };
       if (!page || !routes[page]) {
-        appendLine(`  ${m('Usage:')} ${y('open')} ${g('[about|projects|blog|lab|home]')}`);
+        appendLine(`  ${m('Usage:')} ${y('open')} ${g('[about|projects|blog|reading|lab|home]')}`);
         return;
       }
       appendLine(`  ${m('Navigating to')} ${y('/' + page)} ${m('...')}`);
