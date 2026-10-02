@@ -98,15 +98,15 @@ export const story: Story = {
 
 All data is prepared offline by scripts in `_scripts/` (run manually; outputs committed to `_data/`). Runtime fetches only these static files plus terrain tiles.
 
-1. **Borders** — Newberry Library *Atlas of Historical County Boundaries*, "US Historical States & Territories (1783–2000)", generalized file `US_AtlasHCB_StateTerr_Gen01.zip` (~2 MB). License: reusable "for any lawful purpose, commercial or non-commercial, without licensing or permission fees". Script: unzip → convert shapefile → simplify further → keep `{ id, name, kind: 'state'|'territory'|'other', start, end }` → write **TopoJSON** `_data/borders.topo.json`. Shapes with an end date of 2000-12-31 are treated as continuing to the present (no state borders changed after 2000).
-2. **Population** — `_data/population.json`: `{ [stateId]: { [censusYear]: number } }`, 1790–2020, from US Census Bureau historical decennial counts (public domain); source cited in the file's metadata.
+1. **Borders** — Newberry Library *Atlas of Historical County Boundaries*, "US Historical States & Territories (1783–2000)", generalized file `US_AtlasHCB_StateTerr_Gen01.zip` (~2 MB). License: the downloaded files carry **CC BY-NC-SA 2.5** (the website also says reuse is free "for any lawful purpose"); we follow the stricter terms — non-commercial use, attribution to the Newberry Library, and our derived `borders.topo.json` carries the same license in its metadata. Script: unzip → convert shapefile → simplify further → keep `{ id, name, kind: 'state'|'territory'|'other', start, end }` → write **TopoJSON** `_data/borders.topo.json`. Shapes with an end date of 2000-12-31 are treated as continuing to the present (no state borders changed after 2000).
+2. **Population** — `_data/population.json`: `{ [stateId]: { [censusYear]: number } }`, 1790–2020, from US Census Bureau historical decennial counts (public domain), as compiled per **present-day state boundaries** in Wikipedia's "List of U.S. states and territories by historical population" (state rows sum to the national census totals within 0.01%); source cited in the file's metadata.
 3. **Events** — `_data/events.json`, hand-curated: ratification dates of the original 13, all 37 admissions (exact dates), and major territorial changes: Louisiana Purchase 1803, Maine from Massachusetts 1820, Texas annexation 1845, Oregon Treaty 1846, Mexican Cession 1848, Gadsden Purchase 1853, West Virginia 1863, Alaska Purchase 1867, Dakota split 1889, Hawaii annexation 1898, Alaska and Hawaii statehood 1959.
 4. **Base map** — Natural Earth (public domain) 1:50m coastline, rivers, lakes; populated places (top ~150 by population) → simplified GeoJSON in `_data/basemap/`.
 
 - **Size budget:** all `_data/` combined ≤ ~2 MB gzipped.
 - **Alaska & Hawaii:** true geography (no insets); the camera visits them at 1867/1898/1959 and they appear in the finale overview.
 - **Projection:** MapLibre Web Mercator (distortion over the US is acceptable for v1).
-- **Credits footer:** Newberry Library (AHCB), US Census Bureau, Natural Earth, AWS Terrain Tiles.
+- **Credits footer:** Newberry Library (AHCB, CC BY-NC-SA 2.5), US Census Bureau (via Wikipedia's compiled table, by present-day state boundaries), Natural Earth, AWS Terrain Tiles.
 - **Accuracy:** borders show exactly what Newberry records; captions only state documented facts; data files cite sources.
 
 ## 5. Errors, testing, fit
