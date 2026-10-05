@@ -3,6 +3,8 @@ import { feature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
 import bordersTopo from './borders.topo.json';
 import centroids from './centroids.json';
+import population from './population.json';
+import eventsJson from './events.json';
 
 type BorderProps = { id: string; name: string; kind: 'state' | 'territory' | 'other'; start: string; end: string; lx: number; ly: number };
 const topo = bordersTopo as unknown as Topology & { metadata: Record<string, string> };
@@ -72,8 +74,7 @@ const US_TOTAL: Record<number, number> = {
   1970: 203211926, 1980: 226545805, 1990: 248709873, 2000: 281421906, 2010: 308745538, 2020: 331449281,
 };
 
-describe('population.json', async () => {
-  const population = await import('./population.json', { assert: { type: 'json' } }).then((m) => m.default);
+describe('population.json', () => {
   const states = population.states as Record<string, Record<string, number>>;
   it('has 50 states + DC with a 2020 count', () => {
     expect(Object.keys(states)).toHaveLength(51);
@@ -95,5 +96,32 @@ describe('population.json', async () => {
   it('cites its source', () => {
     expect(population.meta.boundaries).toBe('present-day state boundaries');
     expect(population.meta.url).toMatch(/wikipedia\.org/);
+  });
+});
+
+type AtlasEvent = { date: string; kind: string; text: string; state?: string; name?: string; ordinal?: number };
+const events = eventsJson.events as AtlasEvent[];
+const joins = events.filter((e) => e.kind === 'ratification' || e.kind === 'admission');
+
+describe('events.json', () => {
+  it('is chronological with valid dates', () => {
+    const dates = events.map((e) => e.date);
+    expect([...dates].sort()).toEqual(dates);
+    for (const d of dates) expect(d).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('has every state joining exactly once, ordinals 1..50 in date order', () => {
+    expect(joins).toHaveLength(50);
+    expect(new Set(joins.map((e) => e.state)).size).toBe(50);
+    expect(joins.map((e) => e.ordinal)).toEqual(Array.from({ length: 50 }, (_, i) => i + 1));
+    expect(joins.filter((e) => e.kind === 'ratification')).toHaveLength(13);
+    for (const e of joins) expect(e.state && population.states).toHaveProperty(e.state!);
+  });
+  it('agrees with the borders data for admissions 14–50 (±1 year)', () => {
+    for (const e of joins.filter((j) => j.kind === 'admission')) {
+      const first = borders.filter((f) => f.properties.id === `${e.state!.toLowerCase()}_state`).map((f) => f.properties.start).sort()[0];
+      expect(first, e.state).toBeTruthy();
+      const gapDays = Math.abs(Date.parse(first) - Date.parse(e.date)) / 86_400_000;
+      expect(gapDays, `${e.state} admitted ${e.date}, borders start ${first}`).toBeLessThanOrEqual(366);
+    }
   });
 });
