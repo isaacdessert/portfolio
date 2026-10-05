@@ -64,3 +64,36 @@ describe('centroids.json', () => {
     expect((centroids as Record<string, number[]>).CA[0]).toBeLessThan(-114);
   });
 });
+
+const US_TOTAL: Record<number, number> = {
+  1790: 3929214, 1800: 5308483, 1810: 7239881, 1820: 9638453, 1830: 12866020, 1840: 17069453,
+  1850: 23191876, 1860: 31443321, 1870: 38558371, 1880: 50189209, 1890: 62979766, 1900: 76212168,
+  1910: 92228496, 1920: 106021537, 1930: 123202624, 1940: 132164569, 1950: 151325798, 1960: 179323175,
+  1970: 203211926, 1980: 226545805, 1990: 248709873, 2000: 281421906, 2010: 308745538, 2020: 331449281,
+};
+
+describe('population.json', async () => {
+  const population = await import('./population.json', { assert: { type: 'json' } }).then((m) => m.default);
+  const states = population.states as Record<string, Record<string, number>>;
+  it('has 50 states + DC with a 2020 count', () => {
+    expect(Object.keys(states)).toHaveLength(51);
+    for (const [abbr, series] of Object.entries(states)) {
+      expect(abbr).toMatch(/^[A-Z]{2}$/);
+      expect(series['2020']).toBeGreaterThan(500_000);
+    }
+  });
+  it('only has decennial census years with non-negative integers', () => {
+    for (const series of Object.values(states)) for (const [y, v] of Object.entries(series)) {
+      expect(Number(y) % 10).toBe(0);
+      expect(Number.isInteger(v) && v >= 0).toBe(true);
+    }
+  });
+  it.each(Object.keys(US_TOTAL))('sums to the national total in %s (±0.1%)', (year) => {
+    const sum = Object.values(states).reduce((a, s) => a + (s[year] ?? 0), 0);
+    expect(Math.abs(sum - US_TOTAL[Number(year)]) / US_TOTAL[Number(year)]).toBeLessThan(0.001);
+  });
+  it('cites its source', () => {
+    expect(population.meta.boundaries).toBe('present-day state boundaries');
+    expect(population.meta.url).toMatch(/wikipedia\.org/);
+  });
+});
