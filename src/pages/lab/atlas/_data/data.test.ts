@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { feature } from 'topojson-client';
 import type { Topology } from 'topojson-specification';
@@ -5,6 +8,10 @@ import bordersTopo from './borders.topo.json';
 import centroids from './centroids.json';
 import population from './population.json';
 import eventsJson from './events.json';
+import land from './basemap/land.json';
+import lakes from './basemap/lakes.json';
+import rivers from './basemap/rivers.json';
+import cities from './basemap/cities.json';
 
 type BorderProps = { id: string; name: string; kind: 'state' | 'territory' | 'other'; start: string; end: string; lx: number; ly: number };
 const topo = bordersTopo as unknown as Topology & { metadata: Record<string, string> };
@@ -12,9 +19,9 @@ const borders = (feature(topo, topo.objects.borders) as unknown as GeoJSON.Featu
 const activeOn = (date: string) => borders.filter((f) => f.properties.start <= date && date <= f.properties.end);
 const statesOn = (date: string) => activeOn(date).filter((f) => f.properties.kind === 'state');
 
-function eachCoord(g: GeoJSON.Geometry, fn: (c: number[]) => void) {
+function eachAnyCoord(g: GeoJSON.Geometry, fn: (c: number[]) => void) {
   const walk = (a: unknown): void => { if (typeof (a as number[])[0] === 'number') fn(a as number[]); else (a as unknown[]).forEach(walk); };
-  walk((g as GeoJSON.Polygon | GeoJSON.MultiPolygon).coordinates);
+  walk((g as GeoJSON.Point).coordinates);
 }
 
 describe('borders.topo.json', () => {
@@ -52,7 +59,7 @@ describe('borders.topo.json', () => {
     }
   });
   it('stays in the western hemisphere (no antimeridian slivers)', () => {
-    for (const f of borders) eachCoord(f.geometry, ([lon, lat]) => {
+    for (const f of borders) eachAnyCoord(f.geometry, ([lon, lat]) => {
       expect(lon).toBeGreaterThanOrEqual(-180); expect(lon).toBeLessThanOrEqual(-60);
       expect(lat).toBeGreaterThanOrEqual(15); expect(lat).toBeLessThanOrEqual(72);
     });
@@ -123,5 +130,37 @@ describe('events.json', () => {
       const gapDays = Math.abs(Date.parse(first) - Date.parse(e.date)) / 86_400_000;
       expect(gapDays, `${e.state} admitted ${e.date}, borders start ${first}`).toBeLessThanOrEqual(366);
     }
+  });
+});
+
+describe('basemap', () => {
+  // The 1:50m Natural Earth populated-places file has only 111 USA entries (fewer than the
+  // 150 the brief asked for); per the task's fallback, report the actual count rather than
+  // switching sources.
+  it('has the largest US cities, sorted', () => {
+    const pops = cities.features.map((f) => f.properties.pop);
+    expect(pops).toHaveLength(111);
+    expect([...pops].sort((a, b) => b - a)).toEqual(pops);
+    expect(cities.features[0].properties.name).toMatch(/New York/);
+  });
+  it('keeps everything inside the North America box', () => {
+    for (const fc of [land, lakes, rivers, cities] as GeoJSON.FeatureCollection[]) {
+      for (const f of fc.features) eachAnyCoord(f.geometry, ([lon, lat]) => {
+        expect(lon).toBeGreaterThanOrEqual(-180); expect(lon).toBeLessThanOrEqual(-50);
+        expect(lat).toBeGreaterThanOrEqual(15); expect(lat).toBeLessThanOrEqual(72);
+      });
+    }
+  });
+});
+
+describe('size budget', () => {
+  it('keeps all _data files ≤ 2 MB gzipped', () => {
+    const dir = path.dirname(new URL(import.meta.url).pathname);
+    const files = (d: string): string[] => readdirSync(d).flatMap((n) => {
+      const p = path.join(d, n);
+      return statSync(p).isDirectory() ? files(p) : p.endsWith('.json') ? [p] : [];
+    });
+    const total = files(dir).reduce((a, p) => a + gzipSync(readFileSync(p)).length, 0);
+    expect(total).toBeLessThan(2 * 1024 * 1024);
   });
 });
