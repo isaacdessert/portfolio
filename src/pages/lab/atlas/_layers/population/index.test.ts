@@ -3,7 +3,7 @@ import populationJson from '../../_data/population.json';
 import eventsJson from '../../_data/events.json';
 import centroidsJson from '../../_data/centroids.json';
 import { skinAt } from '../../_engine/skins';
-import { activeStates, buildPopulationData, population, radiusPx } from './index';
+import { activeStates, buildPopulationData, formatPopulation, population, radiusPx } from './index';
 
 const data = buildPopulationData(populationJson, eventsJson, centroidsJson);
 const st = (year: number, depth = 0) => ({ year, skin: skinAt(year), phase: depth > 0 ? '3d' as const : '2d' as const, depth });
@@ -36,5 +36,12 @@ describe('population layer', () => {
   });
   it('provides a legend', () => {
     expect(population.legend!(data, st(1900))!.items.map((i) => i.label)).toEqual(['1M', '10M', '30M']);
+  });
+  it('formatPopulation keeps one decimal under 10M and strips trailing .0', () => {
+    expect(formatPopulation(1e6)).toBe('1M');
+    expect(formatPopulation(1.4e6)).toBe('1.4M');
+    expect(formatPopulation(3e7)).toBe('30M');
+    expect(formatPopulation(39.5e6)).toBe('40M');
+    expect(formatPopulation(92_597)).toBe('93K');
   });
 });

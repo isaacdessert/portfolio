@@ -40,7 +40,8 @@ export function activeStates(data: PopulationData, year: number): Active[] {
     .sort((a, b) => b.value - a.value);
 }
 
-const fmt = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : `${Math.round(v / 1e3)}K`);
+export const formatPopulation = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, '')}M` : `${Math.round(v / 1e3)}K`);
+const fmt = formatPopulation;
 
 export const population: DataLayer<PopulationData> = {
   id: 'population',
