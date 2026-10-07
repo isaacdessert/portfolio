@@ -2,11 +2,21 @@
 import LabLayout from '@lab/LabLayout.astro';
 ---
 
-<LabLayout slug="atlas">
-  <section class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="font-mono text-3xl font-bold text-accent-yellow">Atlas</h1>
-    <p class="mt-4 text-text-primary">
-      Start building in <code class="text-accent-green">src/pages/lab/atlas/</code>.
-    </p>
-  </section>
+<LabLayout slug="atlas" fullscreen>
+  <div id="atlas" class="fixed inset-0">
+    <div data-map class="absolute inset-0"></div>
+    <div data-texture class="pointer-events-none absolute inset-0 mix-blend-multiply" aria-hidden="true"
+      style="background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.33 0 0 0 0 0.18 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;)"></div>
+    <div class="absolute left-6 top-14 font-mono text-5xl" data-year-label>1790</div>
+    <div class="absolute bottom-8 left-1/2 flex w-[min(640px,90vw)] -translate-x-1/2 items-center gap-4 rounded-sm bg-bg-surface/80 px-4 py-3">
+      <button data-play class="font-mono text-sm text-accent-yellow">Play</button>
+      <input data-year-input type="range" min="1790" max="2020" step="0.1" value="1790" class="w-full" aria-label="Year" />
+    </div>
+    <p data-status class="absolute inset-x-0 top-1/2 text-center font-mono text-sm text-text-muted">Loading the atlas…</p>
+  </div>
 </LabLayout>
+
+<script>
+  import { start } from './_engine/main';
+  start(document.getElementById('atlas')!);
+</script>
