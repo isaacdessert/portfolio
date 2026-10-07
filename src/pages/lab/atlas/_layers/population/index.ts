@@ -5,6 +5,7 @@ import eventsUrl from '../../_data/events.json?url';
 import centroidsUrl from '../../_data/centroids.json?url';
 import { valueAtYear } from '../../_engine/interpolate';
 import { toRgba } from '../../_engine/color';
+import { fetchJson } from '../../_engine/fetch';
 import { skinKey } from '../../_engine/skins';
 import { yearToDate } from '../../_engine/time';
 import type { DataLayer } from '../../_engine/types';
@@ -46,8 +47,7 @@ const fmt = formatPopulation;
 export const population: DataLayer<PopulationData> = {
   id: 'population',
   async load() {
-    const get = async (url: string) => { const r = await fetch(url); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); };
-    const [p, e, c] = await Promise.all([get(populationUrl), get(eventsUrl), get(centroidsUrl)]);
+    const [p, e, c] = await Promise.all([fetchJson(populationUrl), fetchJson(eventsUrl), fetchJson(centroidsUrl)]);
     return buildPopulationData(p, e, c);
   },
   render(data, s) {

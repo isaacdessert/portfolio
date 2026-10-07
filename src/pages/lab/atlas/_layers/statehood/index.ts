@@ -2,6 +2,7 @@ import { ScatterplotLayer } from '@deck.gl/layers';
 import eventsUrl from '../../_data/events.json?url';
 import centroidsUrl from '../../_data/centroids.json?url';
 import { toRgba } from '../../_engine/color';
+import { fetchJson } from '../../_engine/fetch';
 import { skinKey } from '../../_engine/skins';
 import { dateToYear } from '../../_engine/time';
 import type { DataLayer } from '../../_engine/types';
@@ -24,8 +25,7 @@ export function ringsAt(data: StatehoodData, year: number): Ring[] {
 export const statehood: DataLayer<StatehoodData> = {
   id: 'statehood',
   async load() {
-    const get = async (url: string) => { const r = await fetch(url); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); };
-    const [e, c] = await Promise.all([get(eventsUrl), get(centroidsUrl)]);
+    const [e, c] = await Promise.all([fetchJson(eventsUrl), fetchJson(centroidsUrl)]);
     return buildStatehoodData(e, c);
   },
   events(data) {
