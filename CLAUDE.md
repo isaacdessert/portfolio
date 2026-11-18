@@ -175,3 +175,17 @@ Mono (`font-mono`) for UI chrome; defined in `tailwind.config.mjs`.
 - [ ] Optional: replace deprecated `z.ZodTypeAny` in `src/lab/api.ts`; add a type-check step (`astro check`)
 - [ ] Optional: single source for the site origin
 - [ ] Optional: Tailwind 4 migration (visual-risk; separate)
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `isaacdessert/portfolio`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and one `docs/adr/` at the repo root, created only when first needed. See `docs/agents/domain.md`.
