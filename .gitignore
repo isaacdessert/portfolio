@@ -36,3 +36,6 @@ pnpm-debug.log*
 
 # Vercel adapter build output / CLI link
 .vercel/
+
+# Claude superpowers scratch (plans, brainstorm mockups)
+.superpowers/

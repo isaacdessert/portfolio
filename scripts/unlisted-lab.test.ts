@@ -36,7 +36,9 @@ describe('unlistedLabPaths', () => {
     expect(unlistedLabPaths(root)).toEqual([]);
   });
 
-  it('returns [] on the real repo (no unlisted projects)', () => {
-    expect(unlistedLabPaths(process.cwd())).toEqual([]);
+  it('returns /lab/<slug>/ prefixes on the real repo', () => {
+    for (const p of unlistedLabPaths(process.cwd())) {
+      expect(p).toMatch(/^\/lab\/[a-z0-9-]+\/$/);
+    }
   });
 });
