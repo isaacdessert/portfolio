@@ -71,4 +71,26 @@ describe('createKv', () => {
     redis.hgetall.mockResolvedValueOnce(null);
     expect(await createKv('hello', asClient(redis)).hgetall('g')).toEqual({});
   });
+
+  it('keeps projects apart for hash commands', async () => {
+    const redis = fakeRedis();
+    await createKv('a', asClient(redis)).hsetnx('guesses', 'mom', 1);
+    await createKv('b', asClient(redis)).hsetnx('guesses', 'mom', 2);
+    await createKv('a', asClient(redis)).hgetall('guesses');
+    await createKv('b', asClient(redis)).hgetall('guesses');
+    await createKv('a', asClient(redis)).hdel('guesses', 'mom');
+    await createKv('b', asClient(redis)).hdel('guesses', 'mom');
+    expect(redis.hsetnx.mock.calls).toEqual([
+      ['lab:a:guesses', 'mom', 1],
+      ['lab:b:guesses', 'mom', 2],
+    ]);
+    expect(redis.hgetall.mock.calls).toEqual([
+      ['lab:a:guesses'],
+      ['lab:b:guesses'],
+    ]);
+    expect(redis.hdel.mock.calls).toEqual([
+      ['lab:a:guesses', 'mom'],
+      ['lab:b:guesses', 'mom'],
+    ]);
+  });
 });
