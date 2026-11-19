@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { GuessInput } from './actions';
-import { boardFromHash, GUESS_KEY, recallGuess, rememberGuess } from './client';
+import { boardFromHash, forgetGuess, GUESS_KEY, recallGuess, rememberGuess } from './client';
 
 /** A minimal in-memory `Storage`, since vitest's node environment has no real one. */
 function memoryStorage(initial: Record<string, string> = {}): Storage {
@@ -36,6 +36,9 @@ const throwing = {
   setItem: () => {
     throw new Error('blocked');
   },
+  removeItem: () => {
+    throw new Error('blocked');
+  },
 } as unknown as Storage;
 
 describe('rememberGuess / recallGuess', () => {
@@ -54,6 +57,20 @@ describe('rememberGuess / recallGuess', () => {
 
   it('never throws when storage is blocked', () =>
     expect(() => rememberGuess(throwing, { guesser: 'A', first: 'Ava', middle: 'Rose' })).not.toThrow());
+});
+
+describe('forgetGuess', () => {
+  it('removes the remembered Guess', () => {
+    const storage = memoryStorage();
+    rememberGuess(storage, { guesser: 'A', first: 'Ava', middle: 'Rose' });
+    forgetGuess(storage);
+    expect(recallGuess(storage)).toBeNull();
+  });
+
+  it('never throws with no storage or blocked storage', () => {
+    expect(() => forgetGuess(undefined)).not.toThrow();
+    expect(() => forgetGuess(throwing)).not.toThrow();
+  });
 });
 
 describe('boardFromHash', () => {

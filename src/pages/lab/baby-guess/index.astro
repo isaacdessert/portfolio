@@ -72,7 +72,17 @@ import Layout from './_components/Layout.astro';
           </button>
         </form>
 
-        <p id="guess-done" class="hidden mt-6 font-semibold"></p>
+        <div id="guess-done-wrap" class="hidden mt-6">
+          <p id="guess-done" class="font-semibold"></p>
+          <button
+            type="button"
+            id="guess-forget"
+            class="mt-2 text-sm underline underline-offset-2"
+            style="color: var(--muted)"
+          >
+            Guess for someone else
+          </button>
+        </div>
       </section>
 
       <section id="boards" class="hidden">
@@ -177,7 +187,7 @@ import Layout from './_components/Layout.astro';
 </Layout>
 
 <script>
-  import { boardFromHash, recallGuess, rememberGuess } from './_lib/client';
+  import { boardFromHash, forgetGuess, recallGuess, rememberGuess } from './_lib/client';
   import type { GuessInput } from './_lib/actions';
   import type { BoardId } from './_lib/game';
   import type { PublicCandidate, PublicState } from './_lib/project';
@@ -339,13 +349,27 @@ import Layout from './_components/Layout.astro';
   const firstInput = document.getElementById('first-input') as HTMLInputElement;
   const middleInput = document.getElementById('middle-input') as HTMLInputElement;
   const guessError = document.getElementById('guess-error') as HTMLParagraphElement;
+  const guessDoneWrap = document.getElementById('guess-done-wrap') as HTMLDivElement;
   const guessDone = document.getElementById('guess-done') as HTMLParagraphElement;
+  const guessForgetButton = document.getElementById('guess-forget') as HTMLButtonElement;
 
   function showGuessDone(guess: GuessInput): void {
     guessForm.classList.add('hidden');
     guessDone.textContent = `Your guess: ${guess.first} ${guess.middle}`;
-    guessDone.classList.remove('hidden');
+    guessDoneWrap.classList.remove('hidden');
   }
+
+  /** Clears the device's remembered Guess and shows the empty form again, e.g. for a shared household device. */
+  function showEmptyForm(): void {
+    forgetGuess(safeLocalStorage());
+    guessDoneWrap.classList.add('hidden');
+    guessForm.reset();
+    guessError.classList.add('hidden');
+    guessForm.classList.remove('hidden');
+    guesserInput.focus();
+  }
+
+  guessForgetButton.addEventListener('click', showEmptyForm);
 
   interface GuessResponse {
     guess?: GuessInput;

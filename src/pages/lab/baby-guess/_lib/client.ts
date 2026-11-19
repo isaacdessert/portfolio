@@ -42,6 +42,15 @@ export function recallGuess(storage: Storage | undefined): GuessInput | null {
   }
 }
 
+/** Clears the Guess remembered on this device, so the form shows empty again. Never throws. */
+export function forgetGuess(storage: Storage | undefined): void {
+  try {
+    storage?.removeItem(GUESS_KEY);
+  } catch {
+    // Storage is blocked — nothing stored, nothing to clear.
+  }
+}
+
 /** The Board a URL hash selects: `#middle` for the middle-name Board, anything else for the first-name one. */
 export function boardFromHash(hash: string): BoardId {
   return hash === '#middle' ? 'middle' : 'first';
