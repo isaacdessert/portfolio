@@ -8,7 +8,7 @@ import Layout from './_components/Layout.astro';
 <Layout title="Baby Guess" description="Guess the baby’s first and middle name before guessing closes.">
   <div class="max-w-md mx-auto px-4 py-10">
     <div id="app" data-state={labUrl('baby-guess', 'api/state')} data-guess={labUrl('baby-guess', 'api/guess')}>
-      <p id="loading" class="hidden">Loading&hellip;</p>
+      <p id="loading">Loading&hellip;</p>
       <p id="error" class="hidden">Something went wrong. Try reloading.</p>
 
       <section id="setup" class="hidden">
@@ -16,11 +16,12 @@ import Layout from './_components/Layout.astro';
       </section>
 
       <section id="guessing" class="hidden">
-        <h1 class="text-2xl font-bold" style="color: var(--accent)">Guess the baby’s name</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--accent-strong)">Guess the baby’s name</h1>
 
         <dl id="guessing-hints" class="mt-4 space-y-2 text-sm"></dl>
 
         <p id="guessing-count" class="mt-4 text-sm" style="color: var(--muted)"></p>
+        <p id="guessing-deadline" class="mt-1 text-sm" style="color: var(--muted)"></p>
 
         <form id="guess-form" class="mt-6 space-y-4">
           <div class="flex flex-col gap-1">
@@ -37,36 +38,39 @@ import Layout from './_components/Layout.astro';
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label for="first-input" class="text-sm font-semibold">First name</label>
+            <label for="baby-first" class="text-sm font-semibold">Baby’s first name</label>
             <input
-              id="first-input"
-              name="first"
+              id="baby-first"
+              name="baby-first"
               type="text"
               required
               maxlength="30"
+              autocomplete="off"
               class="rounded-lg border px-3 py-2"
               style="border-color: var(--gone); background: var(--card)"
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label for="middle-input" class="text-sm font-semibold">Middle name</label>
+            <label for="baby-middle" class="text-sm font-semibold">Baby’s middle name</label>
             <input
-              id="middle-input"
-              name="middle"
+              id="baby-middle"
+              name="baby-middle"
               type="text"
               required
               maxlength="30"
+              autocomplete="off"
               class="rounded-lg border px-3 py-2"
               style="border-color: var(--gone); background: var(--card)"
             />
           </div>
 
-          <p id="guess-error" class="hidden text-sm" role="alert" style="color: var(--accent)"></p>
+          <p id="guess-error" class="hidden text-sm" role="alert" style="color: var(--accent-strong)"></p>
 
           <button
             type="submit"
-            class="w-full rounded-lg px-4 py-2 font-semibold text-white"
-            style="background: var(--accent)"
+            id="guess-submit"
+            class="w-full rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
+            style="background: var(--accent-strong)"
           >
             Send my guess
           </button>
@@ -86,7 +90,13 @@ import Layout from './_components/Layout.astro';
       </section>
 
       <section id="boards" class="hidden">
-        <dl id="boards-hints" class="space-y-2 text-sm"></dl>
+        <h1 class="text-2xl font-bold" style="color: var(--accent-strong)">The Boards</h1>
+
+        <dl id="boards-hints" class="mt-4 space-y-2 text-sm"></dl>
+
+        <p class="mt-4 text-sm" style="color: var(--muted)">
+          Guessing is closed. Each day more names are ruled out, until five are left on each Board.
+        </p>
 
         <div class="mt-6">
           <div id="board-tabs" role="tablist" aria-label="Boards" class="flex gap-2 border-b" style="border-color: var(--gone)">
@@ -115,7 +125,7 @@ import Layout from './_components/Layout.astro';
       </section>
 
       <section id="revealed" class="hidden">
-        <h1 id="revealed-heading" class="text-2xl font-bold" style="color: var(--accent)"></h1>
+        <h1 id="revealed-heading" class="text-2xl font-bold" style="color: var(--accent-strong)"></h1>
 
         <div class="mt-6">
           <h2 class="font-bold">Winners</h2>
@@ -277,13 +287,25 @@ import Layout from './_components/Layout.astro';
     }
   }
 
+  /**
+   * Selecting a tab shouldn't add a Back-button stop for every Board switch, so it updates the
+   * hash with `replaceState` instead of `location.hash =` (which pushes a new history entry).
+   * `hashchange` still fires for an incoming `#middle` link (a real navigation), since that
+   * doesn't go through this function.
+   */
+  function setBoardHash(board: BoardId): void {
+    const hash = `#${board}`;
+    if (location.hash !== hash) history.replaceState(null, '', hash);
+  }
+
   /** Wires click + Left/Right arrow key navigation. Only needs doing once per tablist instance. */
   function wireTabs(refs: TabRefs): void {
     for (const id of BOARD_IDS) {
       const tab = refs.tabs[id];
       tab.textContent = BOARD_LABEL[id];
       tab.addEventListener('click', () => {
-        location.hash = `#${id}`;
+        setBoardHash(id);
+        selectTab(refs, id);
       });
       tab.addEventListener('keydown', (event) => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -292,7 +314,8 @@ import Layout from './_components/Layout.astro';
         const delta = event.key === 'ArrowRight' ? 1 : -1;
         const next = BOARD_IDS[(i + delta + BOARD_IDS.length) % BOARD_IDS.length];
         refs.tabs[next].focus();
-        location.hash = `#${next}`;
+        setBoardHash(next);
+        selectTab(refs, next);
       });
     }
   }
@@ -346,9 +369,10 @@ import Layout from './_components/Layout.astro';
 
   const guessForm = document.getElementById('guess-form') as HTMLFormElement;
   const guesserInput = document.getElementById('guesser-input') as HTMLInputElement;
-  const firstInput = document.getElementById('first-input') as HTMLInputElement;
-  const middleInput = document.getElementById('middle-input') as HTMLInputElement;
+  const firstInput = document.getElementById('baby-first') as HTMLInputElement;
+  const middleInput = document.getElementById('baby-middle') as HTMLInputElement;
   const guessError = document.getElementById('guess-error') as HTMLParagraphElement;
+  const guessSubmitButton = document.getElementById('guess-submit') as HTMLButtonElement;
   const guessDoneWrap = document.getElementById('guess-done-wrap') as HTMLDivElement;
   const guessDone = document.getElementById('guess-done') as HTMLParagraphElement;
   const guessForgetButton = document.getElementById('guess-forget') as HTMLButtonElement;
@@ -365,6 +389,7 @@ import Layout from './_components/Layout.astro';
     guessDoneWrap.classList.add('hidden');
     guessForm.reset();
     guessError.classList.add('hidden');
+    guessSubmitButton.disabled = false;
     guessForm.classList.remove('hidden');
     guesserInput.focus();
   }
@@ -377,7 +402,15 @@ import Layout from './_components/Layout.astro';
     issues?: { path: string; message: string }[];
   }
 
+  /** Prefixes a field-specific validation message with which field it's about. */
+  const GUESS_FIELD_LABEL: Record<string, string> = {
+    first: 'Baby’s first name: ',
+    middle: 'Baby’s middle name: ',
+    guesser: 'Your name: ',
+  };
+
   async function sendGuess(input: GuessInput): Promise<void> {
+    guessSubmitButton.disabled = true;
     try {
       const res = await fetch(guessUrl, {
         method: 'POST',
@@ -392,11 +425,20 @@ import Layout from './_components/Layout.astro';
         return;
       }
 
-      guessError.textContent = data?.issues?.[0]?.message ?? data?.error ?? 'Something went wrong. Try again.';
+      if (res.status === 429) {
+        guessError.textContent = 'Too many guesses from this connection. Please wait a few minutes and try again.';
+      } else {
+        const issue = res.status === 400 ? data?.issues?.[0] : undefined;
+        const message = issue?.message ?? data?.error ?? 'Something went wrong. Try again.';
+        const prefix = issue ? GUESS_FIELD_LABEL[issue.path] : undefined;
+        guessError.textContent = prefix ? `${prefix}${message}` : message;
+      }
       guessError.classList.remove('hidden');
+      guessSubmitButton.disabled = false;
     } catch {
       guessError.textContent = 'Something went wrong. Try again.';
       guessError.classList.remove('hidden');
+      guessSubmitButton.disabled = false;
     }
   }
 
@@ -410,10 +452,19 @@ import Layout from './_components/Layout.astro';
     });
   });
 
+  /** `day` is `YYYY-MM-DD`; parsed as UTC so the calendar date never shifts with the viewer's zone. */
+  function formatDay(day: string): string {
+    const [year, month, date] = day.split('-').map(Number);
+    const utcDate = new Date(Date.UTC(year, month - 1, date));
+    return utcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
   function renderGuessing(state: Extract<PublicState, { phase: 'guessing' }>): void {
     renderHints(document.getElementById('guessing-hints') as HTMLDListElement, state.hints);
     const count = document.getElementById('guessing-count')!;
     count.textContent = `${state.count} guessed so far`;
+    const deadline = document.getElementById('guessing-deadline')!;
+    deadline.textContent = `Guess by the end of ${formatDay(state.lastGuessDay)} (Central time).`;
 
     const remembered = recallGuess(safeLocalStorage());
     if (remembered) showGuessDone(remembered);
