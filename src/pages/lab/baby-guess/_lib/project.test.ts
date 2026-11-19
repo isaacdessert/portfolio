@@ -1,0 +1,176 @@
+import { describe, expect, it } from 'vitest';
+import { BOARDS, buildLock, type BoardId, type GameData, type Guess } from './game';
+import { addDays, daysBetween, type Day } from './days';
+import { hostState, publicState } from './project';
+
+const hints = { first: 'Two syllables', middle: 'A family name' };
+
+function guess(guesser: string, first: string, middle: string, at: string): Guess {
+  return { id: guesser.toLowerCase(), guesser, first, middle, at };
+}
+
+/** 8 Guesses (7 distinct names per Board), 2 Decoys, open through 2027-01-05. Answer: Olivia Rose, guessed by Guesser Alpha. */
+function fixture(): GameData {
+  return {
+    game: { lastGuessDay: '2027-01-05', dueDate: '2027-01-20', hints },
+    guesses: [
+      guess('Guesser Alpha', 'Olivia', 'Rose', '2027-01-01T10:00:00Z'),
+      guess('Guesser Bravo', 'Ava', 'Grace', '2027-01-01T11:00:00Z'),
+      guess('Guesser Charlie', 'Mia', 'Jane', '2027-01-01T12:00:00Z'),
+      guess('Guesser Delta', 'Liam', 'Faith', '2027-01-02T09:00:00Z'),
+      guess('Guesser Echo', 'Noah', 'Hope', '2027-01-02T10:00:00Z'),
+      guess('Guesser Foxtrot', 'Ethan', 'Joy', '2027-01-02T11:00:00Z'),
+      guess('Guesser Golf', 'Zoe', 'Belle', '2027-01-03T09:00:00Z'),
+      guess('Guesser Hotel', 'Ava', 'Grace', '2027-01-03T10:00:00Z'),
+    ],
+    decoys: [
+      { id: 'd1', first: 'Luna', middle: 'Sage', at: '2027-01-01T08:00:00Z' },
+      { id: 'd2', first: 'Ivy', middle: 'Wren', at: '2027-01-01T09:00:00Z' },
+    ],
+  };
+}
+
+const LOCK_PICKS = {
+  first: ['Olivia', 'Ava', 'Mia', 'Liam', 'Noah'],
+  middle: ['Rose', 'Grace', 'Jane', 'Faith', 'Hope'],
+};
+
+/** The lock a Host would make on `day` from `fixture()`'s Candidates, with deterministic shuffling. */
+function lockedFixture(day: Day): GameData {
+  const data = fixture();
+  data.game!.lock = buildLock(data, LOCK_PICKS, day, () => 0);
+  return data;
+}
+
+/** Lists the Days from `from` to `to`, inclusive. */
+function days(from: Day, to: Day): Day[] {
+  const n = daysBetween(from, to);
+  return Array.from({ length: n + 1 }, (_, i) => addDays(from, i));
+}
+
+it('setup shows nothing', () =>
+  expect(publicState({ game: null, guesses: [], decoys: [] }, '2027-01-01')).toEqual({ phase: 'setup' }));
+
+it('guessing shows the Hints and a count that includes Decoys', () =>
+  expect(publicState(fixture(), '2027-01-03')).toEqual({ phase: 'guessing', lastGuessDay: '2027-01-05', hints, count: 10 }));
+
+describe('secrecy before the Reveal', () => {
+  const data = lockedFixture('2027-01-06');
+  const state = publicState(data, '2027-01-12');
+  if (state.phase !== 'boards') throw new Error(`expected phase 'boards', got '${state.phase}'`);
+
+  it('has only phase, hints and boards', () => {
+    expect(Object.keys(state)).toEqual(['phase', 'hints', 'boards']);
+  });
+
+  it('gives every Candidate exactly { name, eliminated }', () => {
+    for (const b of BOARDS) for (const c of state.boards[b]) expect(Object.keys(c)).toEqual(['name', 'eliminated']);
+  });
+
+  it('leaks no Guesser, Decoy, count or lock detail', () => {
+    const text = JSON.stringify(state);
+    for (const word of ['Guesser', 'decoy', 'finalFive', 'order', 'anchor', 'dueDate', 'count', 'guesses']) {
+      expect(text).not.toContain(word);
+    }
+  });
+
+  it('lists alphabetically', () => {
+    for (const b of BOARDS) {
+      const names = state.boards[b].map((c) => c.name);
+      expect(names).toEqual([...names].sort((x, y) => x.localeCompare(y)));
+    }
+  });
+});
+
+it('plays a full timeline', () => {
+  const data = fixture();
+  const game = data.game!;
+
+  for (const day of days('2027-01-01', '2027-01-05')) {
+    expect(publicState(data, day).phase).toBe('guessing');
+  }
+
+  const dayAfterDeadline = publicState(data, '2027-01-06');
+  expect(dayAfterDeadline.phase).toBe('boards');
+  if (dayAfterDeadline.phase !== 'boards') throw new Error('unreachable');
+  for (const b of BOARDS) for (const c of dayAfterDeadline.boards[b]) expect(c.eliminated).toBe(false);
+
+  game.lock = buildLock(data, LOCK_PICKS, '2027-01-06', () => 0);
+
+  const finalFiveNames: Record<BoardId, Set<string>> = {
+    first: new Set(LOCK_PICKS.first),
+    middle: new Set(LOCK_PICKS.middle),
+  };
+  const prevEliminated: Record<BoardId, number> = { first: 0, middle: 0 };
+
+  for (const day of days('2027-01-07', '2027-01-22')) {
+    const state = publicState(data, day);
+    expect(state.phase).toBe('boards');
+    if (state.phase !== 'boards') throw new Error('unreachable');
+    for (const b of BOARDS) {
+      const eliminated = state.boards[b].filter((c) => c.eliminated);
+      expect(eliminated.length).toBeGreaterThanOrEqual(prevEliminated[b]);
+      prevEliminated[b] = eliminated.length;
+      for (const c of eliminated) expect(finalFiveNames[b].has(c.name)).toBe(false);
+      if (day >= '2027-01-20') {
+        const remaining = state.boards[b].filter((c) => !c.eliminated).map((c) => c.name);
+        expect(new Set(remaining)).toEqual(finalFiveNames[b]);
+      }
+    }
+  }
+
+  game.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-23T15:00:00Z' };
+  const revealed = publicState(data, '2027-01-23');
+  expect(revealed.phase).toBe('revealed');
+  if (revealed.phase !== 'revealed') throw new Error('unreachable');
+
+  expect(revealed.winners).toEqual(['Guesser Alpha']);
+  for (const b of BOARDS) {
+    const answered = revealed.boards[b].filter((c) => c.answer);
+    expect(answered).toHaveLength(1);
+    for (const c of revealed.boards[b]) expect(Object.keys(c)).toEqual(['name', 'eliminated', 'answer']);
+  }
+  expect(revealed.guesses).toHaveLength(8);
+  const decoyNames = ['Luna', 'Ivy', 'Sage', 'Wren'];
+  for (const g of revealed.guesses) {
+    expect(decoyNames).not.toContain(g.first);
+    expect(decoyNames).not.toContain(g.middle);
+  }
+});
+
+it('an early Reveal before the lock shows nothing Eliminated', () => {
+  const data = fixture();
+  data.game!.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-02T12:00:00Z' };
+  const state = publicState(data, '2027-01-02');
+  expect(state.phase).toBe('revealed');
+  if (state.phase !== 'revealed') throw new Error('unreachable');
+  for (const b of BOARDS) for (const c of state.boards[b]) expect(c.eliminated).toBe(false);
+});
+
+it('hostState gives the Host counts, Decoys, defaults before the lock and the schedule after it', () => {
+  const data = fixture();
+
+  const before = hostState(data, '2027-01-06', 'development');
+  expect(before.keySpace).toBe('development');
+  expect(before.today).toBe('2027-01-06');
+  expect(before.phase).toBe('boards');
+  expect(before.game).toEqual(data.game);
+  expect(before.guesses).toEqual(data.guesses);
+  expect(before.decoys).toEqual(data.decoys);
+  for (const b of BOARDS) {
+    expect(before.boards[b].defaultFinalFive).toHaveLength(5);
+    expect(before.boards[b].upcoming).toEqual([]);
+  }
+  const ava = before.boards.first.candidates.find((c) => c.key === 'ava');
+  expect(ava).toMatchObject({ guesses: 2, decoys: 0, eliminated: false });
+  const luna = before.boards.first.candidates.find((c) => c.key === 'luna');
+  expect(luna).toMatchObject({ guesses: 0, decoys: 1, eliminated: false });
+
+  data.game!.lock = buildLock(data, LOCK_PICKS, '2027-01-06', () => 0);
+  const after = hostState(data, '2027-01-10', 'development');
+  for (const b of BOARDS) {
+    const finalFiveKeys = new Set(LOCK_PICKS[b].map((n) => n.toLowerCase()));
+    for (const c of after.boards[b].candidates) expect(c.finalFive).toBe(finalFiveKeys.has(c.key));
+    expect(after.boards[b].upcoming.length).toBeGreaterThan(0);
+  }
+});
