@@ -9,7 +9,6 @@ import {
   BOARDS,
   boardCandidates,
   buildLock,
-  eliminatedKeys,
   phaseOf,
   type BoardId,
   type BoardLock,
@@ -37,9 +36,9 @@ export interface ConfigInput {
   hints?: Record<BoardId, string>;
 }
 
-const ANSWER_LABEL: Record<BoardId, { part: string; board: string }> = {
-  first: { part: 'first name', board: 'first-name Board' },
-  middle: { part: 'middle name', board: 'middle-name Board' },
+const ANSWER_LABEL: Record<BoardId, { part: string; boardAdj: string }> = {
+  first: { part: 'first name', boardAdj: 'first-name' },
+  middle: { part: 'middle name', boardAdj: 'middle-name' },
 };
 
 function defaultRandom(): number {
@@ -164,9 +163,12 @@ export async function lockBoards(deps: ActionDeps, picks: Record<BoardId, string
   await deps.store.saveGame({ ...game, lock });
 }
 
-/** Reveals the Answer from today's non-Eliminated Candidates, ending the game. */
+/**
+ * Reveals the Answer, ending the game. After the lock, each name must be one of that Board's
+ * Final Five (the only Candidates that can never be Eliminated); before it, any existing
+ * Candidate — see spec §1 "After the lock, that means from the Final Five."
+ */
 export async function revealAnswer(deps: ActionDeps, input: Record<BoardId, string>): Promise<void> {
-  const today = centralDay(deps.now());
   const data = await deps.store.load();
   const { game } = data;
   assertNotRevealed(game);
@@ -175,12 +177,16 @@ export async function revealAnswer(deps: ActionDeps, input: Record<BoardId, stri
   const answer = {} as Record<BoardId, string>;
   for (const board of BOARDS) {
     const key = normalize(input[board]);
-    const candidateKeys = boardCandidates(data, board).map((c) => c.key);
-    const eliminated = eliminatedKeys(game, board, today);
-    if (!candidateKeys.includes(key) || eliminated.has(key)) {
-      const label = ANSWER_LABEL[board];
-      throw new HttpError(400, `The Answer's ${label.part} must be a Candidate still on the ${label.board}.`);
+    const label = ANSWER_LABEL[board];
+
+    if (game.lock) {
+      if (!game.lock.boards[board].finalFive.includes(key)) {
+        throw new HttpError(400, `The Answer's ${label.part} must be one of the ${label.boardAdj} Final Five.`);
+      }
+    } else if (!boardCandidates(data, board).some((c) => c.key === key)) {
+      throw new HttpError(400, `The Answer's ${label.part} must be a Candidate still on the ${label.boardAdj} Board.`);
     }
+
     answer[board] = key;
   }
 

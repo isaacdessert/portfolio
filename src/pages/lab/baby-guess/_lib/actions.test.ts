@@ -4,7 +4,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeHashKv } from './__fixtures__/fakeKv';
 import { createGameStore } from './store';
-import { eliminatedCount } from './pacing';
 import type { BoardId, Game } from './game';
 import {
   addDecoy,
@@ -66,6 +65,14 @@ const LOCK_PICKS: Record<BoardId, string[]> = {
 
 async function seedCandidates(target: ActionDeps): Promise<void> {
   for (const g of SEED_GUESSES) await target.store.addGuess({ ...g, at: target.now().toISOString() });
+}
+
+/** `count` Guessers, each with its own distinct first and middle name: `FirstNN`/`MidNN`. */
+function makeSeedGuesses(count: number): GuessInput[] {
+  return Array.from({ length: count }, (_, i) => {
+    const n = String(i + 1).padStart(2, '0');
+    return { guesser: `G${n}`, first: `First${n}`, middle: `Mid${n}` };
+  });
 }
 
 let d: ActionDeps;
@@ -158,21 +165,29 @@ describe('saveConfig', () => {
   });
 
   it('re-anchors after the lock when the Due Date moves, keeping today’s Eliminations', async () => {
+    // 17 Guessers → 17 distinct Candidates per Board. Locking the first 5 of each as the Final
+    // Five leaves R = 12 leftover per Board — the spec §1 worked example ("R = 12 over 10 days
+    // goes 1,1,1,1,2,1,1,1,1,2"), picked so the old-schedule count at the move day is neither 0
+    // nor equal to what the new Due Date would give (the bug this test guards against).
     clock = '2027-01-02T12:00:00Z';
-    await seedCandidates(d);
+    for (const g of makeSeedGuesses(17)) await d.store.addGuess({ ...g, at: d.now().toISOString() });
 
-    clock = '2027-01-06T12:00:00Z';
-    await lockBoards(d, LOCK_PICKS);
+    const finalFive = (prefix: string) => Array.from({ length: 5 }, (_, i) => `${prefix}${String(i + 1).padStart(2, '0')}`);
 
-    const beforeGame = (await d.store.load()).game!;
-    const firstLock = beforeGame.lock!.boards.first;
-    const expectedEliminated = eliminatedCount(firstLock.order.length, firstLock.anchor, beforeGame.dueDate, '2027-01-13');
+    // Lock on 01-10, with the base game's Due Date (01-20) still in force:
+    // m = daysBetween(01-10, 01-20) = 10, matching the spec's worked example.
+    clock = '2027-01-10T12:00:00Z';
+    await lockBoards(d, { first: finalFive('First'), middle: finalFive('Mid') });
 
-    clock = '2027-01-13T12:00:00Z';
-    const updated = await saveConfig(d, { dueDate: '2027-01-16' });
+    // Move the Due Date on 01-17, 7 days after the lock: k = daysBetween(01-10, 01-17) = 7.
+    // R = 12 > m = 10, so by the spec §1 formula: eliminated(t) = floor(R·k/m) = floor(12·7/10)
+    // = floor(8.4) = 8 — under the OLD Due Date (01-20), independent of the new one.
+    clock = '2027-01-17T12:00:00Z';
+    const updated = await saveConfig(d, { dueDate: '2027-02-05' });
 
-    expect(updated.lock!.boards.first.anchor).toEqual({ day: '2027-01-13', eliminated: expectedEliminated });
-    expect(updated.lock!.boards.middle.anchor.day).toBe('2027-01-13');
+    const expectedAnchor = { day: '2027-01-17', eliminated: 8 };
+    expect(updated.lock!.boards.first.anchor).toEqual(expectedAnchor);
+    expect(updated.lock!.boards.middle.anchor).toEqual(expectedAnchor);
   });
 });
 
@@ -256,23 +271,38 @@ describe('revealAnswer', () => {
     expect(state.answer).toEqual({ first: 'Olivia', middle: 'Rose' });
   });
 
-  it('refuses an Eliminated Candidate', async () => {
+  it('refuses a leftover Candidate once locked, even before it would be Eliminated, and accepts a Final Five member', async () => {
     clock = '2027-01-02T12:00:00Z';
     await seedCandidates(d);
 
     clock = '2027-01-06T12:00:00Z';
     await lockBoards(d, LOCK_PICKS);
 
-    // At the Due Date, both leftover first-name Candidates (ethan, zoe) are Eliminated regardless
-    // of shuffle order: R = m = 2, so the whole leftover list clears at the final midnight.
-    clock = '2027-01-20T12:00:00Z';
+    // 'ethan' (first) and 'joy' (middle) are leftovers, not Final Five members. The Due Date is
+    // 2027-01-20, so under the pacing schedule neither has been Eliminated yet on 01-10 — but once
+    // locked, only the Final Five is eligible as the Answer at all (spec §1 "After the lock, that
+    // means from the Final Five"), independent of the day's Elimination count.
+    clock = '2027-01-10T12:00:00Z';
     await expect(revealAnswer(d, { first: 'Ethan', middle: 'Rose' })).rejects.toMatchObject({
       status: 400,
-      message: "The Answer's first name must be a Candidate still on the first-name Board.",
+      message: "The Answer's first name must be one of the first-name Final Five.",
     });
     await expect(revealAnswer(d, { first: 'Olivia', middle: 'Joy' })).rejects.toMatchObject({
       status: 400,
-      message: "The Answer's middle name must be a Candidate still on the middle-name Board.",
+      message: "The Answer's middle name must be one of the middle-name Final Five.",
+    });
+
+    // A Final Five member, same day, is accepted.
+    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose' })).resolves.toBeUndefined();
+  });
+
+  it('refuses a name that is not yet a Candidate, before the lock', async () => {
+    clock = '2027-01-02T12:00:00Z';
+    await seedCandidates(d);
+
+    await expect(revealAnswer(d, { first: 'Mystery', middle: 'Rose' })).rejects.toMatchObject({
+      status: 400,
+      message: "The Answer's first name must be a Candidate still on the first-name Board.",
     });
   });
 
