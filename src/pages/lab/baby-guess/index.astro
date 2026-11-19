@@ -1,12 +1,484 @@
 ---
-import LabLayout from '@lab/LabLayout.astro';
+// The Guesser page: fetches the public state once and renders whichever phase it's in. See
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3.
+import { labUrl } from '@lab/url';
+import Layout from './_components/Layout.astro';
 ---
 
-<LabLayout slug="baby-guess">
-  <section class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="font-mono text-3xl font-bold text-accent-yellow">Baby Guess</h1>
-    <p class="mt-4 text-text-primary">
-      Start building in <code class="text-accent-green">src/pages/lab/baby-guess/</code>.
-    </p>
-  </section>
-</LabLayout>
+<Layout title="Baby Guess" description="Guess the baby’s first and middle name before guessing closes.">
+  <div class="max-w-md mx-auto px-4 py-10">
+    <div id="app" data-state={labUrl('baby-guess', 'api/state')} data-guess={labUrl('baby-guess', 'api/guess')}>
+      <p id="loading" class="hidden">Loading&hellip;</p>
+      <p id="error" class="hidden">Something went wrong. Try reloading.</p>
+
+      <section id="setup" class="hidden">
+        <p>Guessing opens soon.</p>
+      </section>
+
+      <section id="guessing" class="hidden">
+        <h1 class="text-2xl font-bold" style="color: var(--accent)">Guess the baby’s name</h1>
+
+        <dl id="guessing-hints" class="mt-4 space-y-2 text-sm"></dl>
+
+        <p id="guessing-count" class="mt-4 text-sm" style="color: var(--muted)"></p>
+
+        <form id="guess-form" class="mt-6 space-y-4">
+          <div class="flex flex-col gap-1">
+            <label for="guesser-input" class="text-sm font-semibold">Your name</label>
+            <input
+              id="guesser-input"
+              name="guesser"
+              type="text"
+              required
+              maxlength="50"
+              autocomplete="name"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="first-input" class="text-sm font-semibold">First name</label>
+            <input
+              id="first-input"
+              name="first"
+              type="text"
+              required
+              maxlength="30"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="middle-input" class="text-sm font-semibold">Middle name</label>
+            <input
+              id="middle-input"
+              name="middle"
+              type="text"
+              required
+              maxlength="30"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+
+          <p id="guess-error" class="hidden text-sm" role="alert" style="color: var(--accent)"></p>
+
+          <button
+            type="submit"
+            class="w-full rounded-lg px-4 py-2 font-semibold text-white"
+            style="background: var(--accent)"
+          >
+            Send my guess
+          </button>
+        </form>
+
+        <p id="guess-done" class="hidden mt-6 font-semibold"></p>
+      </section>
+
+      <section id="boards" class="hidden">
+        <dl id="boards-hints" class="space-y-2 text-sm"></dl>
+
+        <div class="mt-6">
+          <div id="board-tabs" role="tablist" aria-label="Boards" class="flex gap-2 border-b" style="border-color: var(--gone)">
+            <button
+              id="board-tab-first"
+              type="button"
+              role="tab"
+              aria-controls="board-panel-first"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              First name
+            </button>
+            <button
+              id="board-tab-middle"
+              type="button"
+              role="tab"
+              aria-controls="board-panel-middle"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              Middle name
+            </button>
+          </div>
+          <ul id="board-panel-first" role="tabpanel" aria-labelledby="board-tab-first" class="mt-4 space-y-1"></ul>
+          <ul id="board-panel-middle" role="tabpanel" aria-labelledby="board-tab-middle" class="mt-4 space-y-1 hidden"></ul>
+        </div>
+      </section>
+
+      <section id="revealed" class="hidden">
+        <h1 id="revealed-heading" class="text-2xl font-bold" style="color: var(--accent)"></h1>
+
+        <div class="mt-6">
+          <h2 class="font-bold">Winners</h2>
+          <p id="revealed-no-winners" class="hidden mt-1 text-sm" style="color: var(--muted)">
+            Nobody got both names.
+          </p>
+          <ul id="revealed-winners" class="mt-1 space-y-1"></ul>
+        </div>
+
+        <div id="revealed-partial-wrap" class="hidden mt-6">
+          <h2 class="font-bold">Partial winners</h2>
+          <ul id="revealed-partial" class="mt-1 space-y-1"></ul>
+        </div>
+
+        <div class="mt-6">
+          <div
+            id="revealed-tabs"
+            role="tablist"
+            aria-label="Boards"
+            class="flex gap-2 border-b"
+            style="border-color: var(--gone)"
+          >
+            <button
+              id="revealed-tab-first"
+              type="button"
+              role="tab"
+              aria-controls="revealed-panel-first"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              First name
+            </button>
+            <button
+              id="revealed-tab-middle"
+              type="button"
+              role="tab"
+              aria-controls="revealed-panel-middle"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              Middle name
+            </button>
+          </div>
+          <ul id="revealed-panel-first" role="tabpanel" aria-labelledby="revealed-tab-first" class="mt-4 space-y-1"></ul>
+          <ul
+            id="revealed-panel-middle"
+            role="tabpanel"
+            aria-labelledby="revealed-tab-middle"
+            class="mt-4 space-y-1 hidden"
+          ></ul>
+        </div>
+
+        <div class="mt-6">
+          <h2 class="font-bold">Everyone’s guesses</h2>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th scope="col" class="py-1 pr-2">Guesser</th>
+                  <th scope="col" class="py-1 pr-2">First</th>
+                  <th scope="col" class="py-1">Middle</th>
+                </tr>
+              </thead>
+              <tbody id="revealed-guesses"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { boardFromHash, recallGuess, rememberGuess } from './_lib/client';
+  import type { GuessInput } from './_lib/actions';
+  import type { BoardId } from './_lib/game';
+  import type { PublicCandidate, PublicState } from './_lib/project';
+
+  const app = document.getElementById('app') as HTMLDivElement;
+  const stateUrl = app.dataset.state!;
+  const guessUrl = app.dataset.guess!;
+
+  const SECTION_IDS = ['loading', 'error', 'setup', 'guessing', 'boards', 'revealed'] as const;
+  type SectionId = (typeof SECTION_IDS)[number];
+
+  const sections: Record<SectionId, HTMLElement> = {
+    loading: document.getElementById('loading')!,
+    error: document.getElementById('error')!,
+    setup: document.getElementById('setup')!,
+    guessing: document.getElementById('guessing')!,
+    boards: document.getElementById('boards')!,
+    revealed: document.getElementById('revealed')!,
+  };
+
+  function showSection(id: SectionId): void {
+    for (const sectionId of SECTION_IDS) sections[sectionId].classList.toggle('hidden', sectionId !== id);
+  }
+
+  /** `window.localStorage` can itself throw (private mode, disabled cookies) — never let that break the page. */
+  function safeLocalStorage(): Storage | undefined {
+    try {
+      return window.localStorage;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // --- Hints (shared by the guessing and boards phases) ---
+
+  function renderHints(container: HTMLDListElement, hints: Record<BoardId, string>): void {
+    container.textContent = '';
+    const rows: [string, string][] = [
+      ['First name hint', hints.first],
+      ['Middle name hint', hints.middle],
+    ];
+    for (const [label, value] of rows) {
+      const dt = document.createElement('dt');
+      dt.className = 'font-semibold';
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      container.append(dt, dd);
+    }
+  }
+
+  // --- Board tabs (shared by the boards and revealed phases) ---
+
+  const BOARD_IDS: BoardId[] = ['first', 'middle'];
+  const BOARD_LABEL: Record<BoardId, string> = { first: 'First name', middle: 'Middle name' };
+
+  interface TabRefs {
+    tabs: Record<BoardId, HTMLButtonElement>;
+    panels: Record<BoardId, HTMLUListElement>;
+  }
+
+  /** The tabs/panels for whichever phase is currently showing, so `hashchange` knows what to re-select. */
+  let activeTabs: TabRefs | null = null;
+
+  function getTabRefs(prefix: string): TabRefs {
+    return {
+      tabs: {
+        first: document.getElementById(`${prefix}-tab-first`) as HTMLButtonElement,
+        middle: document.getElementById(`${prefix}-tab-middle`) as HTMLButtonElement,
+      },
+      panels: {
+        first: document.getElementById(`${prefix}-panel-first`) as HTMLUListElement,
+        middle: document.getElementById(`${prefix}-panel-middle`) as HTMLUListElement,
+      },
+    };
+  }
+
+  function selectTab(refs: TabRefs, board: BoardId): void {
+    for (const id of BOARD_IDS) {
+      const selected = id === board;
+      const tab = refs.tabs[id];
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      tab.style.borderBottomColor = selected ? 'var(--accent)' : 'transparent';
+      tab.style.color = selected ? 'var(--ink)' : 'var(--muted)';
+      refs.panels[id].classList.toggle('hidden', !selected);
+    }
+  }
+
+  /** Wires click + Left/Right arrow key navigation. Only needs doing once per tablist instance. */
+  function wireTabs(refs: TabRefs): void {
+    for (const id of BOARD_IDS) {
+      const tab = refs.tabs[id];
+      tab.textContent = BOARD_LABEL[id];
+      tab.addEventListener('click', () => {
+        location.hash = `#${id}`;
+      });
+      tab.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const i = BOARD_IDS.indexOf(id);
+        const delta = event.key === 'ArrowRight' ? 1 : -1;
+        const next = BOARD_IDS[(i + delta + BOARD_IDS.length) % BOARD_IDS.length];
+        refs.tabs[next].focus();
+        location.hash = `#${next}`;
+      });
+    }
+  }
+
+  type RevealedCandidate = PublicCandidate & { answer?: boolean };
+
+  function renderCandidateList(panel: HTMLUListElement, candidates: RevealedCandidate[]): void {
+    panel.textContent = '';
+    for (const candidate of candidates) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = candidate.name;
+      li.appendChild(name);
+
+      if (candidate.eliminated) {
+        li.classList.add('line-through');
+        li.style.color = 'var(--gone)';
+        const ruledOut = document.createElement('span');
+        ruledOut.className = 'sr-only';
+        ruledOut.textContent = ' (ruled out)';
+        li.appendChild(ruledOut);
+      }
+
+      if (candidate.answer) {
+        li.classList.add('rounded', 'px-1');
+        li.style.boxShadow = '0 0 0 2px var(--accent)';
+        const answerLabel = document.createElement('span');
+        answerLabel.className = 'sr-only';
+        answerLabel.textContent = ' (the Answer)';
+        li.appendChild(answerLabel);
+      }
+
+      panel.appendChild(li);
+    }
+  }
+
+  /** Builds (or rebuilds) one phase's board tabs, selects the Board named by the current hash, and wires it up. */
+  function renderBoards(prefix: string, boards: Record<BoardId, RevealedCandidate[]>): void {
+    const refs = getTabRefs(prefix);
+    wireTabs(refs);
+    for (const id of BOARD_IDS) renderCandidateList(refs.panels[id], boards[id]);
+    selectTab(refs, boardFromHash(location.hash));
+    activeTabs = refs;
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (activeTabs) selectTab(activeTabs, boardFromHash(location.hash));
+  });
+
+  // --- Guessing phase ---
+
+  const guessForm = document.getElementById('guess-form') as HTMLFormElement;
+  const guesserInput = document.getElementById('guesser-input') as HTMLInputElement;
+  const firstInput = document.getElementById('first-input') as HTMLInputElement;
+  const middleInput = document.getElementById('middle-input') as HTMLInputElement;
+  const guessError = document.getElementById('guess-error') as HTMLParagraphElement;
+  const guessDone = document.getElementById('guess-done') as HTMLParagraphElement;
+
+  function showGuessDone(guess: GuessInput): void {
+    guessForm.classList.add('hidden');
+    guessDone.textContent = `Your guess: ${guess.first} ${guess.middle}`;
+    guessDone.classList.remove('hidden');
+  }
+
+  interface GuessResponse {
+    guess?: GuessInput;
+    error?: string;
+    issues?: { path: string; message: string }[];
+  }
+
+  async function sendGuess(input: GuessInput): Promise<void> {
+    try {
+      const res = await fetch(guessUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      const data = (await res.json().catch(() => null)) as GuessResponse | null;
+
+      if (res.ok && data?.guess) {
+        rememberGuess(safeLocalStorage(), data.guess);
+        showGuessDone(data.guess);
+        return;
+      }
+
+      guessError.textContent = data?.issues?.[0]?.message ?? data?.error ?? 'Something went wrong. Try again.';
+      guessError.classList.remove('hidden');
+    } catch {
+      guessError.textContent = 'Something went wrong. Try again.';
+      guessError.classList.remove('hidden');
+    }
+  }
+
+  guessForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    guessError.classList.add('hidden');
+    void sendGuess({
+      guesser: guesserInput.value,
+      first: firstInput.value,
+      middle: middleInput.value,
+    });
+  });
+
+  function renderGuessing(state: Extract<PublicState, { phase: 'guessing' }>): void {
+    renderHints(document.getElementById('guessing-hints') as HTMLDListElement, state.hints);
+    const count = document.getElementById('guessing-count')!;
+    count.textContent = `${state.count} guessed so far`;
+
+    const remembered = recallGuess(safeLocalStorage());
+    if (remembered) showGuessDone(remembered);
+  }
+
+  // --- Boards and revealed phases ---
+
+  function renderBoardsPhase(state: Extract<PublicState, { phase: 'boards' }>): void {
+    renderHints(document.getElementById('boards-hints') as HTMLDListElement, state.hints);
+    renderBoards('board', state.boards);
+  }
+
+  function renderWinners(winners: string[]): void {
+    const list = document.getElementById('revealed-winners') as HTMLUListElement;
+    const empty = document.getElementById('revealed-no-winners')!;
+    list.textContent = '';
+    empty.classList.toggle('hidden', winners.length > 0);
+    for (const name of winners) {
+      const li = document.createElement('li');
+      li.textContent = name;
+      list.appendChild(li);
+    }
+  }
+
+  function renderPartialWinners(partialWinners: { guesser: string; matched: BoardId }[]): void {
+    const wrap = document.getElementById('revealed-partial-wrap')!;
+    const list = document.getElementById('revealed-partial') as HTMLUListElement;
+    list.textContent = '';
+    wrap.classList.toggle('hidden', partialWinners.length === 0);
+    for (const partial of partialWinners) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = partial.guesser;
+      const matched = document.createElement('span');
+      matched.className = 'text-sm';
+      matched.style.color = 'var(--muted)';
+      matched.textContent = partial.matched === 'first' ? ' (first name)' : ' (middle name)';
+      li.append(name, matched);
+      list.appendChild(li);
+    }
+  }
+
+  function renderGuessesTable(guesses: { guesser: string; first: string; middle: string }[]): void {
+    const tbody = document.getElementById('revealed-guesses') as HTMLTableSectionElement;
+    tbody.textContent = '';
+    for (const guess of guesses) {
+      const tr = document.createElement('tr');
+      for (const value of [guess.guesser, guess.first, guess.middle]) {
+        const td = document.createElement('td');
+        td.className = 'py-1 pr-2';
+        td.textContent = value;
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+  }
+
+  function renderRevealed(state: Extract<PublicState, { phase: 'revealed' }>): void {
+    const heading = document.getElementById('revealed-heading')!;
+    heading.textContent = `It’s ${state.answer.first} ${state.answer.middle}!`;
+    renderWinners(state.winners);
+    renderPartialWinners(state.partialWinners);
+    renderBoards('revealed', state.boards);
+    renderGuessesTable(state.guesses);
+  }
+
+  // --- Entry point ---
+
+  function renderPhase(state: PublicState): void {
+    showSection(state.phase);
+    if (state.phase === 'guessing') renderGuessing(state);
+    else if (state.phase === 'boards') renderBoardsPhase(state);
+    else if (state.phase === 'revealed') renderRevealed(state);
+  }
+
+  async function load(): Promise<void> {
+    showSection('loading');
+    try {
+      const res = await fetch(stateUrl);
+      if (!res.ok) {
+        showSection('error');
+        return;
+      }
+      const state = (await res.json()) as PublicState;
+      renderPhase(state);
+    } catch {
+      showSection('error');
+    }
+  }
+
+  void load();
+</script>

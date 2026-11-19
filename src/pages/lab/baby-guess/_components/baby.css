@@ -1,0 +1,22 @@
+/* Baby Guess's own stylesheet. It can't import the portfolio's global.css (isolation), so it
+   carries its own @tailwind directives; the compiled bundle includes classes used anywhere in
+   src/, which is acceptable here. See docs/superpowers/specs/2026-11-18-baby-guess-design.md §3. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #fff8f0;
+  --card: #ffffff;
+  --ink: #3b2f2f;
+  --muted: #8a7a70;
+  --accent: #e07a5f;
+  --sage: #81b29a;
+  --gone: #c9bfb7;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Nunito', system-ui, sans-serif;
+}
