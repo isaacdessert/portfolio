@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BOARDS, buildLock, type BoardId, type GameData, type Guess } from './game';
 import { addDays, daysBetween, type Day } from './days';
+import { eliminatedCount } from './pacing';
 import { hostState, publicState } from './project';
 
 const hints = { first: 'Two syllables', middle: 'A family name' };
@@ -48,6 +49,17 @@ function days(from: Day, to: Day): Day[] {
   return Array.from({ length: n + 1 }, (_, i) => addDays(from, i));
 }
 
+/**
+ * The exact Eliminated count the pacing formula gives for `board` on `day`, read from `data`'s own
+ * lock. An oracle independent of `publicState`'s plumbing, so a projection that passes the wrong
+ * day (e.g. the Due Date instead of `today`) into Elimination shows up as a count mismatch instead
+ * of passing by accident.
+ */
+function expectedEliminated(data: GameData, board: BoardId, day: Day): number {
+  const lock = data.game!.lock!.boards[board];
+  return eliminatedCount(lock.order.length, lock.anchor, data.game!.dueDate, day);
+}
+
 it('setup shows nothing', () =>
   expect(publicState({ game: null, guesses: [], decoys: [] }, '2027-01-01')).toEqual({ phase: 'setup' }));
 
@@ -80,6 +92,13 @@ describe('secrecy before the Reveal', () => {
       expect(names).toEqual([...names].sort((x, y) => x.localeCompare(y)));
     }
   });
+
+  it('shows exactly the Eliminated count the pacing formula gives for this day, not a future one', () => {
+    for (const b of BOARDS) {
+      const eliminated = state.boards[b].filter((c) => c.eliminated);
+      expect(eliminated).toHaveLength(expectedEliminated(data, b, '2027-01-12'));
+    }
+  });
 });
 
 it('plays a full timeline', () => {
@@ -101,7 +120,6 @@ it('plays a full timeline', () => {
     first: new Set(LOCK_PICKS.first),
     middle: new Set(LOCK_PICKS.middle),
   };
-  const prevEliminated: Record<BoardId, number> = { first: 0, middle: 0 };
 
   for (const day of days('2027-01-07', '2027-01-22')) {
     const state = publicState(data, day);
@@ -109,8 +127,10 @@ it('plays a full timeline', () => {
     if (state.phase !== 'boards') throw new Error('unreachable');
     for (const b of BOARDS) {
       const eliminated = state.boards[b].filter((c) => c.eliminated);
-      expect(eliminated.length).toBeGreaterThanOrEqual(prevEliminated[b]);
-      prevEliminated[b] = eliminated.length;
+      // Pinned to the pacing formula's own count for *this* day, not just "didn't decrease" — a
+      // projection that passed the Due Date instead of today would show 4 on every one of these
+      // days (the schedule's final value) instead of the real 0,0,…,0,1,2,3,4 ramp.
+      expect(eliminated).toHaveLength(expectedEliminated(data, b, day));
       for (const c of eliminated) expect(finalFiveNames[b].has(c.name)).toBe(false);
       if (day >= '2027-01-20') {
         const remaining = state.boards[b].filter((c) => !c.eliminated).map((c) => c.name);
