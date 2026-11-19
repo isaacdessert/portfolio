@@ -740,6 +740,12 @@ import Layout from '../_components/Layout.astro';
     return board.candidates.filter((c) => checkedKeys.has(c.key)).map((c) => c.name);
   }
 
+  // Lock and Reveal leave re-enabling on success to `refresh()`'s own `updateLockButton`/
+  // `renderReveal` (which know the real post-write rules — e.g. the Lock button must stay disabled
+  // once locked); re-enabling here first would both race a double-click during that refresh and
+  // end up fighting that logic once it runs. On failure, nothing else will reset the button, so
+  // this does it directly.
+
   async function doLock(): Promise<void> {
     const payload = {
       first: boardCheckboxes.first.filter((cb) => cb.checked).map((cb) => cb.dataset.key as string),
@@ -748,7 +754,6 @@ import Layout from '../_components/Layout.astro';
     lockButton.disabled = true;
     try {
       await api(lockUrl, payload);
-      lockButton.disabled = false;
       lockError.classList.add('hidden');
       await refresh();
     } catch (err) {
@@ -761,7 +766,6 @@ import Layout from '../_components/Layout.astro';
     revealButton.disabled = true;
     try {
       await api(revealUrl, { first, middle });
-      revealButton.disabled = false;
       revealError.classList.add('hidden');
       await refresh();
     } catch (err) {
