@@ -112,7 +112,7 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
 - Endpoints: `api/<name>.ts`, `export const prerender = false`, wrap in `handler()`, validate with
   `readBody(request, schema)` (`import { z } from 'astro/zod'`). Call them with **JSON** bodies.
 - Anything calling a paid API **must** `rateLimit()` first (keys on `x-forwarded-for`, set by Vercel).
-- State: `kv('<slug>')` — keys auto-prefixed `lab:<slug>:`.
+- State: `kv('<slug>')` — keys auto-prefixed `lab:<slug>:`; `get/set/incr/del/expire` plus hash `hsetnx/hgetall/hdel`.
 - Secrets: project-specific vars prefixed with the slug (`PIXEL_GARDEN_API_KEY`), read via `requireEnv()`.
 - Storage beyond Redis: Vercel Marketplace (Neon Postgres, Blob), then `vercel env pull`.
 - Graduate a project: own repo + Vercel project, add `<slug>.isaacdessert.dev` there (explicit domain
