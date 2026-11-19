@@ -286,6 +286,10 @@ import Layout from '../_components/Layout.astro';
 
   let currentState: HostState | null = null;
   const boardCheckboxes: Record<BoardId, HTMLInputElement[]> = { first: [], middle: [] };
+  // The Host's own picks per Board, kept in memory across refreshes while unlocked. `null` means
+  // the Host hasn't touched that Board yet, so it still tracks the server's live `defaultFinalFive`
+  // (via `candidate.finalFive`); once touched, this is the only source of truth until the lock.
+  const boardPicks: Record<BoardId, Set<string> | null> = { first: null, middle: null };
 
   /** `window.localStorage` can itself throw (private mode, disabled cookies) — never let that break the page. */
   function safeLocalStorage(): Storage | undefined {
@@ -298,27 +302,39 @@ import Layout from '../_components/Layout.astro';
 
   const storage = safeLocalStorage();
 
+  // The in-memory token is the source of truth for every request this session makes; localStorage
+  // is best-effort persistence only, so a blocked store (private mode, disabled cookies) never
+  // locks the Host out of a session they've already opened with a correct token.
+  let currentToken: string | null = null;
+
   function getToken(): string | null {
-    try {
-      return storage?.getItem(TOKEN_KEY) ?? null;
-    } catch {
-      return null;
-    }
+    return currentToken;
   }
 
   function setToken(token: string): void {
+    currentToken = token;
     try {
       storage?.setItem(TOKEN_KEY, token);
     } catch {
-      // Storage is blocked — nothing to do about it.
+      // Storage is blocked — the in-memory token still works for this session.
     }
   }
 
   function clearToken(): void {
+    currentToken = null;
     try {
       storage?.removeItem(TOKEN_KEY);
     } catch {
       // Storage is blocked — nothing stored, nothing to clear.
+    }
+  }
+
+  /** Reads a previously-saved token once, at load, so a returning Host skips the gate. */
+  function loadStoredToken(): string | null {
+    try {
+      return storage?.getItem(TOKEN_KEY) ?? null;
+    } catch {
+      return null;
     }
   }
 
@@ -459,6 +475,15 @@ import Layout from '../_components/Layout.astro';
   }
 
   function renderBoardPreLock(container: HTMLDivElement, board: HostBoard, id: BoardId): void {
+    // Drop picks whose Candidate no longer exists (e.g. its last Guess/Decoy was deleted).
+    const picks = boardPicks[id];
+    if (picks) {
+      const existingKeys = new Set(board.candidates.map((c) => c.key));
+      for (const key of picks) {
+        if (!existingKeys.has(key)) picks.delete(key);
+      }
+    }
+
     const table = document.createElement('table');
     table.className = 'w-full text-left text-sm';
 
@@ -502,9 +527,12 @@ import Layout from '../_components/Layout.astro';
       pickTd.className = 'py-1';
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      checkbox.checked = candidate.finalFive;
+      checkbox.checked = picks ? picks.has(candidate.key) : candidate.finalFive;
       checkbox.dataset.key = candidate.key;
       checkbox.addEventListener('change', () => {
+        // Re-snapshot the whole Board's checked keys — this both records the Host's first touch
+        // and keeps every later toggle in sync, so a refresh can restore exactly what's checked.
+        boardPicks[id] = new Set(boardCheckboxes[id].filter((cb) => cb.checked).map((cb) => cb.dataset.key as string));
         updateCount();
         updateLockButton();
       });
@@ -750,7 +778,7 @@ import Layout from '../_components/Layout.astro';
   // --- Entry point ---
 
   (function init(): void {
-    const token = getToken();
+    const token = loadStoredToken();
     if (token) void openWithToken(token);
   })();
 </script>
