@@ -154,7 +154,8 @@ Every response is `cache-control: no-store`. The Host token never appears in a p
   - `og:*`/`twitter:*` with an **absolute** `og:image` built from an image imported from the
     project folder. It lands in `/_astro/`, which passes through on the subdomain and satisfies
     `scripts/check-og.mjs`;
-  - a favicon imported the same way. `/favicon.svg` on the subdomain serves the portfolio's.
+  - its own favicon, as an inline `data:` SVG, because `/favicon.svg` on the subdomain serves the
+    portfolio's.
 - **Styling:** a warm, light look, designed mobile-first, since most people arrive from a phone.
   - The project stylesheet carries its own `@tailwind` directives, because it can't import
     `global.css`. The bundle includes classes from all of `src/`, which is acceptable.
