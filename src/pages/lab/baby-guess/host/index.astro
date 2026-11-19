@@ -1,0 +1,756 @@
+---
+// The Host's private page: gated by a token, talks to the Host API, renders Settings, Guesses,
+// Decoys, both Boards, the lock and the Reveal. See
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3.
+import { labUrl } from '@lab/url';
+import Layout from '../_components/Layout.astro';
+---
+
+<Layout
+  title="Baby Guess · Host"
+  description="Guess the baby’s first and middle name before guessing closes."
+  path="/host/"
+>
+  <div class="max-w-2xl mx-auto px-4 py-10">
+    <div
+      id="app"
+      data-state={labUrl('baby-guess', 'api/host/state')}
+      data-config={labUrl('baby-guess', 'api/host/config')}
+      data-decoy={labUrl('baby-guess', 'api/host/decoy')}
+      data-remove={labUrl('baby-guess', 'api/host/remove')}
+      data-lock={labUrl('baby-guess', 'api/host/lock')}
+      data-reveal={labUrl('baby-guess', 'api/host/reveal')}
+    >
+      <section id="gate">
+        <h1 class="text-2xl font-bold" style="color: var(--accent)">Baby Guess · Host</h1>
+        <form id="gate-form" class="mt-6 space-y-4">
+          <div class="flex flex-col gap-1">
+            <label for="token-input" class="text-sm font-semibold">Host token</label>
+            <input
+              id="token-input"
+              type="password"
+              required
+              autocomplete="off"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+          <p id="gate-error" class="hidden text-sm" role="alert" style="color: var(--accent)"></p>
+          <button
+            type="submit"
+            class="w-full rounded-lg px-4 py-2 font-semibold text-white"
+            style="background: var(--accent)"
+          >
+            Open
+          </button>
+        </form>
+      </section>
+
+      <section id="main" class="hidden">
+        <p id="status-line" class="text-sm" style="color: var(--muted)"></p>
+        <p id="status-error" class="hidden mt-1 text-sm" role="alert" style="color: var(--accent)"></p>
+
+        <section class="mt-8">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">Settings</h2>
+          <form id="settings-form" class="mt-4 space-y-4">
+            <div class="flex flex-col gap-1">
+              <label for="last-guess-day-input" class="text-sm font-semibold">Last guessing day</label>
+              <input
+                id="last-guess-day-input"
+                type="date"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="due-date-input" class="text-sm font-semibold">Due Date</label>
+              <input
+                id="due-date-input"
+                type="date"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="hint-first-input" class="text-sm font-semibold">First-name Hint</label>
+              <input
+                id="hint-first-input"
+                type="text"
+                maxlength="200"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="hint-middle-input" class="text-sm font-semibold">Middle-name Hint</label>
+              <input
+                id="hint-middle-input"
+                type="text"
+                maxlength="200"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <p id="settings-error" class="hidden text-sm" role="alert" style="color: var(--accent)"></p>
+            <button
+              type="submit"
+              class="rounded-lg px-4 py-2 font-semibold text-white"
+              style="background: var(--accent)"
+            >
+              Save
+            </button>
+          </form>
+        </section>
+
+        <section class="mt-8">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">Guesses</h2>
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th scope="col" class="py-1 pr-2">Guesser</th>
+                  <th scope="col" class="py-1 pr-2">First</th>
+                  <th scope="col" class="py-1 pr-2">Middle</th>
+                  <th scope="col" class="py-1 pr-2">Time</th>
+                  <th scope="col" class="py-1"></th>
+                </tr>
+              </thead>
+              <tbody id="guesses-body"></tbody>
+            </table>
+          </div>
+          <p id="guesses-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+        </section>
+
+        <section id="decoys-section" class="mt-8">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">Decoys</h2>
+          <p class="mt-2 text-sm" style="color: var(--muted)">
+            Add Decoys before guessing closes so the count stays believable.
+          </p>
+          <p class="mt-1 text-sm" style="color: var(--muted)">
+            Put at least one Decoy besides the Answer in each Final Five.
+          </p>
+          <form id="decoy-form" class="mt-4 flex flex-wrap items-end gap-2">
+            <div class="flex flex-col gap-1">
+              <label for="decoy-first-input" class="text-sm font-semibold">First name</label>
+              <input
+                id="decoy-first-input"
+                type="text"
+                required
+                maxlength="30"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="decoy-middle-input" class="text-sm font-semibold">Middle name</label>
+              <input
+                id="decoy-middle-input"
+                type="text"
+                required
+                maxlength="30"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <button
+              type="submit"
+              class="rounded-lg px-4 py-2 font-semibold text-white"
+              style="background: var(--accent)"
+            >
+              Add Decoy
+            </button>
+          </form>
+          <ul id="decoys-list" class="mt-4 space-y-1"></ul>
+          <p id="decoys-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+        </section>
+
+        <section class="mt-8">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">First-name Board</h2>
+          <div id="board-first-body" class="mt-4"></div>
+        </section>
+
+        <section class="mt-8">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">Middle-name Board</h2>
+          <div id="board-middle-body" class="mt-4"></div>
+        </section>
+
+        <section class="mt-8">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">Lock</h2>
+          <button
+            id="lock-button"
+            type="button"
+            disabled
+            class="mt-4 rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
+            style="background: var(--accent)"
+          >
+            Lock both Final Fives
+          </button>
+          <p id="lock-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+        </section>
+
+        <section id="reveal-section" class="mt-8 hidden">
+          <h2 class="text-xl font-bold" style="color: var(--accent)">Reveal</h2>
+          <form id="reveal-form" class="mt-4 flex flex-wrap items-end gap-2">
+            <div class="flex flex-col gap-1">
+              <label for="reveal-first-select" class="text-sm font-semibold">First name</label>
+              <select
+                id="reveal-first-select"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              ></select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="reveal-middle-select" class="text-sm font-semibold">Middle name</label>
+              <select
+                id="reveal-middle-select"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              ></select>
+            </div>
+            <button
+              id="reveal-button"
+              type="submit"
+              disabled
+              class="rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
+              style="background: var(--accent)"
+            >
+              Reveal
+            </button>
+          </form>
+          <p id="reveal-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+        </section>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import type { BoardId } from '../_lib/game';
+  import type { HostBoard, HostCandidate, HostState } from '../_lib/project';
+
+  const BOARD_IDS: BoardId[] = ['first', 'middle'];
+  const TOKEN_KEY = 'baby-guess:host-token';
+
+  // --- Elements ---
+
+  const app = document.getElementById('app') as HTMLDivElement;
+  const stateUrl = app.dataset.state!;
+  const configUrl = app.dataset.config!;
+  const decoyUrl = app.dataset.decoy!;
+  const removeUrl = app.dataset.remove!;
+  const lockUrl = app.dataset.lock!;
+  const revealUrl = app.dataset.reveal!;
+
+  const gate = document.getElementById('gate') as HTMLElement;
+  const gateForm = document.getElementById('gate-form') as HTMLFormElement;
+  const tokenInput = document.getElementById('token-input') as HTMLInputElement;
+  const gateError = document.getElementById('gate-error') as HTMLParagraphElement;
+
+  const main = document.getElementById('main') as HTMLElement;
+  const statusLine = document.getElementById('status-line') as HTMLParagraphElement;
+  const statusError = document.getElementById('status-error') as HTMLParagraphElement;
+
+  const settingsForm = document.getElementById('settings-form') as HTMLFormElement;
+  const lastGuessDayInput = document.getElementById('last-guess-day-input') as HTMLInputElement;
+  const dueDateInput = document.getElementById('due-date-input') as HTMLInputElement;
+  const hintFirstInput = document.getElementById('hint-first-input') as HTMLInputElement;
+  const hintMiddleInput = document.getElementById('hint-middle-input') as HTMLInputElement;
+  const settingsError = document.getElementById('settings-error') as HTMLParagraphElement;
+
+  const guessesBody = document.getElementById('guesses-body') as HTMLTableSectionElement;
+  const guessesError = document.getElementById('guesses-error') as HTMLParagraphElement;
+
+  const decoysSection = document.getElementById('decoys-section') as HTMLElement;
+  const decoyForm = document.getElementById('decoy-form') as HTMLFormElement;
+  const decoyFirstInput = document.getElementById('decoy-first-input') as HTMLInputElement;
+  const decoyMiddleInput = document.getElementById('decoy-middle-input') as HTMLInputElement;
+  const decoysList = document.getElementById('decoys-list') as HTMLUListElement;
+  const decoysError = document.getElementById('decoys-error') as HTMLParagraphElement;
+
+  const boardBody: Record<BoardId, HTMLDivElement> = {
+    first: document.getElementById('board-first-body') as HTMLDivElement,
+    middle: document.getElementById('board-middle-body') as HTMLDivElement,
+  };
+
+  const lockButton = document.getElementById('lock-button') as HTMLButtonElement;
+  const lockError = document.getElementById('lock-error') as HTMLParagraphElement;
+
+  const revealSection = document.getElementById('reveal-section') as HTMLElement;
+  const revealForm = document.getElementById('reveal-form') as HTMLFormElement;
+  const revealFirstSelect = document.getElementById('reveal-first-select') as HTMLSelectElement;
+  const revealMiddleSelect = document.getElementById('reveal-middle-select') as HTMLSelectElement;
+  const revealButton = document.getElementById('reveal-button') as HTMLButtonElement;
+  const revealError = document.getElementById('reveal-error') as HTMLParagraphElement;
+
+  // --- State ---
+
+  let currentState: HostState | null = null;
+  const boardCheckboxes: Record<BoardId, HTMLInputElement[]> = { first: [], middle: [] };
+
+  /** `window.localStorage` can itself throw (private mode, disabled cookies) — never let that break the page. */
+  function safeLocalStorage(): Storage | undefined {
+    try {
+      return window.localStorage;
+    } catch {
+      return undefined;
+    }
+  }
+
+  const storage = safeLocalStorage();
+
+  function getToken(): string | null {
+    try {
+      return storage?.getItem(TOKEN_KEY) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  function setToken(token: string): void {
+    try {
+      storage?.setItem(TOKEN_KEY, token);
+    } catch {
+      // Storage is blocked — nothing to do about it.
+    }
+  }
+
+  function clearToken(): void {
+    try {
+      storage?.removeItem(TOKEN_KEY);
+    } catch {
+      // Storage is blocked — nothing stored, nothing to clear.
+    }
+  }
+
+  function showGate(message: string): void {
+    gateError.textContent = message;
+    gateError.classList.remove('hidden');
+    gate.classList.remove('hidden');
+    main.classList.add('hidden');
+  }
+
+  function showError(el: HTMLParagraphElement, err: unknown): void {
+    el.textContent = err instanceof Error ? err.message : 'Something went wrong. Try again.';
+    el.classList.remove('hidden');
+  }
+
+  interface ApiErrorBody {
+    error?: string;
+    issues?: { path: string; message: string }[];
+  }
+
+  /** Adds the Bearer header, sends JSON, and clears the token + shows the gate on a 401. */
+  async function api<T>(url: string, body?: unknown): Promise<T> {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: body === undefined ? 'GET' : 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${getToken() ?? ''}` },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch {
+      throw new Error('Something went wrong. Try again.');
+    }
+
+    const data = (await res.json().catch(() => null)) as (ApiErrorBody & Partial<T>) | null;
+
+    if (res.status === 401) {
+      clearToken();
+      showGate('Wrong token.');
+      throw new Error('Wrong token.');
+    }
+    if (!res.ok) {
+      throw new Error(data?.issues?.[0]?.message ?? data?.error ?? 'Something went wrong. Try again.');
+    }
+    return data as T;
+  }
+
+  /** Re-fetches the Host state (never on a timer — only on load and after a successful write). */
+  async function refresh(): Promise<void> {
+    try {
+      const state = await api<HostState>(stateUrl);
+      statusError.classList.add('hidden');
+      renderAll(state);
+    } catch (err) {
+      showError(statusError, err);
+    }
+  }
+
+  // --- Rendering ---
+
+  function renderStatusLine(state: HostState): void {
+    statusLine.textContent = `Key space: ${state.keySpace} · Today: ${state.today} · Phase: ${state.phase}`;
+  }
+
+  function renderSettings(state: HostState): void {
+    const game = state.game;
+    lastGuessDayInput.value = game?.lastGuessDay ?? '';
+    dueDateInput.value = game?.dueDate ?? '';
+    hintFirstInput.value = game?.hints.first ?? '';
+    hintMiddleInput.value = game?.hints.middle ?? '';
+
+    const fixed = state.phase === 'boards' || state.phase === 'revealed';
+    lastGuessDayInput.disabled = fixed;
+    hintFirstInput.disabled = fixed;
+    hintMiddleInput.disabled = fixed;
+  }
+
+  function renderGuesses(state: HostState): void {
+    guessesBody.textContent = '';
+    const locked = !!state.game?.lock;
+    const sorted = [...state.guesses].sort((a, b) => a.guesser.localeCompare(b.guesser));
+
+    for (const guess of sorted) {
+      const tr = document.createElement('tr');
+      for (const value of [guess.guesser, guess.first, guess.middle, new Date(guess.at).toLocaleString()]) {
+        const td = document.createElement('td');
+        td.className = 'py-1 pr-2';
+        td.textContent = value;
+        tr.appendChild(td);
+      }
+
+      const actionTd = document.createElement('td');
+      actionTd.className = 'py-1';
+      if (!locked) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'text-sm underline underline-offset-2';
+        button.style.color = 'var(--accent)';
+        button.textContent = 'Delete';
+        button.addEventListener('click', () => {
+          void deleteEntry('guess', guess.id, `Delete ${guess.guesser}’s guess?`, guessesError);
+        });
+        actionTd.appendChild(button);
+      }
+      tr.appendChild(actionTd);
+      guessesBody.appendChild(tr);
+    }
+  }
+
+  function renderDecoys(state: HostState): void {
+    const locked = !!state.game?.lock;
+    decoysSection.classList.toggle('hidden', locked);
+    if (locked) return;
+
+    decoysList.textContent = '';
+    for (const decoy of state.decoys) {
+      const li = document.createElement('li');
+      li.className = 'flex items-center justify-between gap-2';
+      const name = document.createElement('span');
+      name.textContent = `${decoy.first} ${decoy.middle}`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'text-sm underline underline-offset-2';
+      button.style.color = 'var(--accent)';
+      button.textContent = 'Delete';
+      button.addEventListener('click', () => {
+        void deleteEntry('decoy', decoy.id, 'Delete this Decoy?', decoysError);
+      });
+      li.append(name, button);
+      decoysList.appendChild(li);
+    }
+  }
+
+  /** `day` is `YYYY-MM-DD`; parsed as UTC so the calendar date never shifts with the viewer's zone. */
+  function formatUpcomingDay(day: string): string {
+    const [year, month, date] = day.split('-').map(Number);
+    const utcDate = new Date(Date.UTC(year, month - 1, date));
+    return utcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  function renderBoardPreLock(container: HTMLDivElement, board: HostBoard, id: BoardId): void {
+    const table = document.createElement('table');
+    table.className = 'w-full text-left text-sm';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const label of ['Candidate', 'Guesses', 'Decoys', 'Final Five']) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.className = 'py-1 pr-2';
+      th.textContent = label;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const countParagraph = document.createElement('p');
+    countParagraph.className = 'mt-2 text-sm';
+    countParagraph.style.color = 'var(--muted)';
+
+    function updateCount(): void {
+      countParagraph.textContent = `${boardCheckboxes[id].filter((cb) => cb.checked).length} of 5 picked`;
+    }
+
+    const tbody = document.createElement('tbody');
+    for (const candidate of board.candidates) {
+      const tr = document.createElement('tr');
+
+      const nameTd = document.createElement('td');
+      nameTd.className = 'py-1 pr-2';
+      nameTd.textContent = candidate.name;
+
+      const guessesTd = document.createElement('td');
+      guessesTd.className = 'py-1 pr-2';
+      guessesTd.textContent = String(candidate.guesses);
+
+      const decoysTd = document.createElement('td');
+      decoysTd.className = 'py-1 pr-2';
+      decoysTd.textContent = String(candidate.decoys);
+
+      const pickTd = document.createElement('td');
+      pickTd.className = 'py-1';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = candidate.finalFive;
+      checkbox.dataset.key = candidate.key;
+      checkbox.addEventListener('change', () => {
+        updateCount();
+        updateLockButton();
+      });
+      pickTd.appendChild(checkbox);
+
+      tr.append(nameTd, guessesTd, decoysTd, pickTd);
+      tbody.appendChild(tr);
+      boardCheckboxes[id].push(checkbox);
+    }
+    table.appendChild(tbody);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'overflow-x-auto';
+    wrap.appendChild(table);
+
+    updateCount();
+    container.append(wrap, countParagraph);
+  }
+
+  function renderBoardPostLock(container: HTMLDivElement, board: HostBoard): void {
+    const ul = document.createElement('ul');
+    ul.className = 'space-y-1';
+
+    for (const candidate of board.candidates) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = candidate.name;
+      li.appendChild(name);
+
+      if (candidate.eliminated) {
+        li.classList.add('line-through');
+        li.style.color = 'var(--gone)';
+        const ruledOut = document.createElement('span');
+        ruledOut.className = 'sr-only';
+        ruledOut.textContent = ' (eliminated)';
+        li.appendChild(ruledOut);
+      }
+
+      if (candidate.finalFive) {
+        li.classList.add('font-semibold');
+        const star = document.createElement('span');
+        star.setAttribute('aria-hidden', 'true');
+        star.textContent = ' ★';
+        li.appendChild(star);
+        const starLabel = document.createElement('span');
+        starLabel.className = 'sr-only';
+        starLabel.textContent = ' (Final Five)';
+        li.appendChild(starLabel);
+      }
+
+      ul.appendChild(li);
+    }
+
+    const schedule = document.createElement('p');
+    schedule.className = 'mt-2 text-sm';
+    schedule.style.color = 'var(--muted)';
+    schedule.textContent =
+      board.upcoming.length > 0
+        ? board.upcoming.map((u) => `${formatUpcomingDay(u.day)} · ${u.count}`).join(', ')
+        : 'No more eliminations scheduled.';
+
+    container.append(ul, schedule);
+  }
+
+  function renderBoard(id: BoardId, state: HostState): void {
+    const board = state.boards[id];
+    const container = boardBody[id];
+    container.textContent = '';
+    boardCheckboxes[id] = [];
+
+    if (state.game?.lock) renderBoardPostLock(container, board);
+    else renderBoardPreLock(container, board, id);
+  }
+
+  /** Enabled only in phase `boards`, unlocked, with exactly 5 Candidates picked on each Board. */
+  function updateLockButton(): void {
+    const bothFive = BOARD_IDS.every(
+      (id) => boardCheckboxes[id].length > 0 && boardCheckboxes[id].filter((cb) => cb.checked).length === 5,
+    );
+    const locked = !!currentState?.game?.lock;
+    lockButton.disabled = !(currentState?.phase === 'boards' && !locked && bothFive);
+  }
+
+  /** Before the lock: non-Eliminated Candidates. After: only that Board's Final Five. */
+  function revealCandidates(board: HostBoard, locked: boolean): HostCandidate[] {
+    return locked ? board.candidates.filter((c) => c.finalFive) : board.candidates.filter((c) => !c.eliminated);
+  }
+
+  function populateRevealSelect(select: HTMLSelectElement, candidates: HostCandidate[]): void {
+    const previous = select.value;
+    select.textContent = '';
+    for (const candidate of candidates) {
+      const option = document.createElement('option');
+      option.value = candidate.key;
+      option.textContent = candidate.name;
+      select.appendChild(option);
+    }
+    if (candidates.some((c) => c.key === previous)) select.value = previous;
+  }
+
+  function renderReveal(state: HostState): void {
+    const available = state.phase === 'guessing' || state.phase === 'boards';
+    revealSection.classList.toggle('hidden', !available);
+    if (!available) return;
+
+    const locked = !!state.game?.lock;
+    const firstCandidates = revealCandidates(state.boards.first, locked);
+    const middleCandidates = revealCandidates(state.boards.middle, locked);
+    populateRevealSelect(revealFirstSelect, firstCandidates);
+    populateRevealSelect(revealMiddleSelect, middleCandidates);
+    revealButton.disabled = firstCandidates.length === 0 || middleCandidates.length === 0;
+  }
+
+  function renderAll(state: HostState): void {
+    currentState = state;
+    renderStatusLine(state);
+    renderSettings(state);
+    renderGuesses(state);
+    renderDecoys(state);
+    for (const id of BOARD_IDS) renderBoard(id, state);
+    updateLockButton();
+    renderReveal(state);
+  }
+
+  // --- Writes ---
+
+  async function deleteEntry(
+    kind: 'guess' | 'decoy',
+    id: string,
+    confirmText: string,
+    errorEl: HTMLParagraphElement,
+  ): Promise<void> {
+    if (!confirm(confirmText)) return;
+    try {
+      await api(removeUrl, { kind, id });
+      errorEl.classList.add('hidden');
+      await refresh();
+    } catch (err) {
+      showError(errorEl, err);
+    }
+  }
+
+  async function saveSettings(): Promise<void> {
+    if (!currentState) return;
+    const fixed = currentState.phase === 'boards' || currentState.phase === 'revealed';
+    const payload = fixed
+      ? { dueDate: dueDateInput.value }
+      : {
+          lastGuessDay: lastGuessDayInput.value,
+          dueDate: dueDateInput.value,
+          hints: { first: hintFirstInput.value, middle: hintMiddleInput.value },
+        };
+    try {
+      await api(configUrl, payload);
+      settingsError.classList.add('hidden');
+      await refresh();
+    } catch (err) {
+      showError(settingsError, err);
+    }
+  }
+
+  async function addDecoy(): Promise<void> {
+    const payload = { first: decoyFirstInput.value, middle: decoyMiddleInput.value };
+    try {
+      await api(decoyUrl, payload);
+      decoyForm.reset();
+      decoysError.classList.add('hidden');
+      await refresh();
+    } catch (err) {
+      showError(decoysError, err);
+    }
+  }
+
+  async function doLock(): Promise<void> {
+    const payload = {
+      first: boardCheckboxes.first.filter((cb) => cb.checked).map((cb) => cb.dataset.key as string),
+      middle: boardCheckboxes.middle.filter((cb) => cb.checked).map((cb) => cb.dataset.key as string),
+    };
+    try {
+      await api(lockUrl, payload);
+      lockError.classList.add('hidden');
+      await refresh();
+    } catch (err) {
+      showError(lockError, err);
+    }
+  }
+
+  async function doReveal(first: string, middle: string): Promise<void> {
+    try {
+      await api(revealUrl, { first, middle });
+      revealError.classList.add('hidden');
+      await refresh();
+    } catch (err) {
+      showError(revealError, err);
+    }
+  }
+
+  async function openWithToken(token: string): Promise<void> {
+    setToken(token);
+    gateError.classList.add('hidden');
+    try {
+      const state = await api<HostState>(stateUrl);
+      gate.classList.add('hidden');
+      main.classList.remove('hidden');
+      renderAll(state);
+    } catch (err) {
+      showError(gateError, err);
+    }
+  }
+
+  // --- Wiring ---
+
+  gateForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void openWithToken(tokenInput.value);
+  });
+
+  settingsForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void saveSettings();
+  });
+
+  decoyForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void addDecoy();
+  });
+
+  lockButton.addEventListener('click', () => {
+    if (lockButton.disabled) return;
+    if (!confirm('Lock both Final Fives? This can’t be undone.')) return;
+    void doLock();
+  });
+
+  revealForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const firstOption = revealFirstSelect.selectedOptions[0];
+    const middleOption = revealMiddleSelect.selectedOptions[0];
+    if (!firstOption || !middleOption) return;
+    if (!confirm(`Reveal ${firstOption.textContent} ${middleOption.textContent}? This ends the game.`)) return;
+    void doReveal(firstOption.value, middleOption.value);
+  });
+
+  // --- Entry point ---
+
+  (function init(): void {
+    const token = getToken();
+    if (token) void openWithToken(token);
+  })();
+</script>
