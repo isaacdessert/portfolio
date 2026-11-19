@@ -22,7 +22,7 @@ import Layout from '../_components/Layout.astro';
       data-reveal={labUrl('baby-guess', 'api/host/reveal')}
     >
       <section id="gate">
-        <h1 class="text-2xl font-bold" style="color: var(--accent)">Baby Guess · Host</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--accent-strong)">Baby Guess · Host</h1>
         <form id="gate-form" class="mt-6 space-y-4">
           <div class="flex flex-col gap-1">
             <label for="token-input" class="text-sm font-semibold">Host token</label>
@@ -35,11 +35,11 @@ import Layout from '../_components/Layout.astro';
               style="border-color: var(--gone); background: var(--card)"
             />
           </div>
-          <p id="gate-error" class="hidden text-sm" role="alert" style="color: var(--accent)"></p>
+          <p id="gate-error" class="hidden text-sm" role="alert" style="color: var(--accent-strong)"></p>
           <button
             type="submit"
             class="w-full rounded-lg px-4 py-2 font-semibold text-white"
-            style="background: var(--accent)"
+            style="background: var(--accent-strong)"
           >
             Open
           </button>
@@ -48,10 +48,10 @@ import Layout from '../_components/Layout.astro';
 
       <section id="main" class="hidden">
         <p id="status-line" class="text-sm" style="color: var(--muted)"></p>
-        <p id="status-error" class="hidden mt-1 text-sm" role="alert" style="color: var(--accent)"></p>
+        <p id="status-error" class="hidden mt-1 text-sm" role="alert" style="color: var(--accent-strong)"></p>
 
         <section class="mt-8">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">Settings</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">Settings</h2>
           <form id="settings-form" class="mt-4 space-y-4">
             <div class="flex flex-col gap-1">
               <label for="last-guess-day-input" class="text-sm font-semibold">Last guessing day</label>
@@ -61,6 +61,9 @@ import Layout from '../_components/Layout.astro';
                 class="rounded-lg border px-3 py-2"
                 style="border-color: var(--gone); background: var(--card)"
               />
+              <p class="text-sm" style="color: var(--muted)">
+                Guessing closes at midnight Central at the end of this day.
+              </p>
             </div>
             <div class="flex flex-col gap-1">
               <label for="due-date-input" class="text-sm font-semibold">Due Date</label>
@@ -91,11 +94,12 @@ import Layout from '../_components/Layout.astro';
                 style="border-color: var(--gone); background: var(--card)"
               />
             </div>
-            <p id="settings-error" class="hidden text-sm" role="alert" style="color: var(--accent)"></p>
+            <p id="settings-error" class="hidden text-sm" role="alert" style="color: var(--accent-strong)"></p>
             <button
+              id="settings-save-button"
               type="submit"
-              class="rounded-lg px-4 py-2 font-semibold text-white"
-              style="background: var(--accent)"
+              class="rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
+              style="background: var(--accent-strong)"
             >
               Save
             </button>
@@ -103,7 +107,7 @@ import Layout from '../_components/Layout.astro';
         </section>
 
         <section class="mt-8">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">Guesses</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">Guesses</h2>
           <div class="mt-4 overflow-x-auto">
             <table class="w-full text-left text-sm">
               <thead>
@@ -118,17 +122,16 @@ import Layout from '../_components/Layout.astro';
               <tbody id="guesses-body"></tbody>
             </table>
           </div>
-          <p id="guesses-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+          <p id="guesses-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent-strong)"></p>
         </section>
 
         <section id="decoys-section" class="mt-8">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">Decoys</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">Decoys</h2>
           <p class="mt-2 text-sm" style="color: var(--muted)">
-            Add Decoys before guessing closes so the count stays believable.
+            Add the Answer as a Decoy before guessing closes, even if someone guessed it — it hides among the other
+            names.
           </p>
-          <p class="mt-1 text-sm" style="color: var(--muted)">
-            Put at least one Decoy besides the Answer in each Final Five.
-          </p>
+          <p class="mt-1 text-sm" style="color: var(--muted)">Put at least one other Decoy in each Final Five.</p>
           <form id="decoy-form" class="mt-4 flex flex-wrap items-end gap-2">
             <div class="flex flex-col gap-1">
               <label for="decoy-first-input" class="text-sm font-semibold">First name</label>
@@ -153,43 +156,44 @@ import Layout from '../_components/Layout.astro';
               />
             </div>
             <button
+              id="decoy-add-button"
               type="submit"
-              class="rounded-lg px-4 py-2 font-semibold text-white"
-              style="background: var(--accent)"
+              class="rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
+              style="background: var(--accent-strong)"
             >
               Add Decoy
             </button>
           </form>
           <ul id="decoys-list" class="mt-4 space-y-1"></ul>
-          <p id="decoys-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+          <p id="decoys-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent-strong)"></p>
         </section>
 
         <section class="mt-8">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">First-name Board</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">First-name Board</h2>
           <div id="board-first-body" class="mt-4"></div>
         </section>
 
         <section class="mt-8">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">Middle-name Board</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">Middle-name Board</h2>
           <div id="board-middle-body" class="mt-4"></div>
         </section>
 
         <section class="mt-8">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">Lock</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">Lock</h2>
           <button
             id="lock-button"
             type="button"
             disabled
             class="mt-4 rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
-            style="background: var(--accent)"
+            style="background: var(--accent-strong)"
           >
             Lock both Final Fives
           </button>
-          <p id="lock-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+          <p id="lock-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent-strong)"></p>
         </section>
 
         <section id="reveal-section" class="mt-8 hidden">
-          <h2 class="text-xl font-bold" style="color: var(--accent)">Reveal</h2>
+          <h2 class="text-xl font-bold" style="color: var(--accent-strong)">Reveal</h2>
           <form id="reveal-form" class="mt-4 flex flex-wrap items-end gap-2">
             <div class="flex flex-col gap-1">
               <label for="reveal-first-select" class="text-sm font-semibold">First name</label>
@@ -212,12 +216,12 @@ import Layout from '../_components/Layout.astro';
               type="submit"
               disabled
               class="rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
-              style="background: var(--accent)"
+              style="background: var(--accent-strong)"
             >
               Reveal
             </button>
           </form>
-          <p id="reveal-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent)"></p>
+          <p id="reveal-error" class="hidden mt-2 text-sm" role="alert" style="color: var(--accent-strong)"></p>
         </section>
       </section>
     </div>
@@ -256,6 +260,7 @@ import Layout from '../_components/Layout.astro';
   const hintFirstInput = document.getElementById('hint-first-input') as HTMLInputElement;
   const hintMiddleInput = document.getElementById('hint-middle-input') as HTMLInputElement;
   const settingsError = document.getElementById('settings-error') as HTMLParagraphElement;
+  const settingsSaveButton = document.getElementById('settings-save-button') as HTMLButtonElement;
 
   const guessesBody = document.getElementById('guesses-body') as HTMLTableSectionElement;
   const guessesError = document.getElementById('guesses-error') as HTMLParagraphElement;
@@ -264,6 +269,7 @@ import Layout from '../_components/Layout.astro';
   const decoyForm = document.getElementById('decoy-form') as HTMLFormElement;
   const decoyFirstInput = document.getElementById('decoy-first-input') as HTMLInputElement;
   const decoyMiddleInput = document.getElementById('decoy-middle-input') as HTMLInputElement;
+  const decoyAddButton = document.getElementById('decoy-add-button') as HTMLButtonElement;
   const decoysList = document.getElementById('decoys-list') as HTMLUListElement;
   const decoysError = document.getElementById('decoys-error') as HTMLParagraphElement;
 
@@ -431,10 +437,10 @@ import Layout from '../_components/Layout.astro';
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'text-sm underline underline-offset-2';
-        button.style.color = 'var(--accent)';
+        button.style.color = 'var(--accent-strong)';
         button.textContent = 'Delete';
         button.addEventListener('click', () => {
-          void deleteEntry('guess', guess.id, `Delete ${guess.guesser}’s guess?`, guessesError);
+          void deleteEntry('guess', guess.id, `Delete ${guess.guesser}’s guess?`, guessesError, button);
         });
         actionTd.appendChild(button);
       }
@@ -457,10 +463,10 @@ import Layout from '../_components/Layout.astro';
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'text-sm underline underline-offset-2';
-      button.style.color = 'var(--accent)';
+      button.style.color = 'var(--accent-strong)';
       button.textContent = 'Delete';
       button.addEventListener('click', () => {
-        void deleteEntry('decoy', decoy.id, 'Delete this Decoy?', decoysError);
+        void deleteEntry('decoy', decoy.id, 'Delete this Decoy?', decoysError, button);
       });
       li.append(name, button);
       decoysList.appendChild(li);
@@ -664,13 +670,17 @@ import Layout from '../_components/Layout.astro';
     id: string,
     confirmText: string,
     errorEl: HTMLParagraphElement,
+    button: HTMLButtonElement,
   ): Promise<void> {
     if (!confirm(confirmText)) return;
+    button.disabled = true;
     try {
       await api(removeUrl, { kind, id });
+      button.disabled = false;
       errorEl.classList.add('hidden');
       await refresh();
     } catch (err) {
+      button.disabled = false;
       showError(errorEl, err);
     }
   }
@@ -678,6 +688,12 @@ import Layout from '../_components/Layout.astro';
   async function saveSettings(): Promise<void> {
     if (!currentState) return;
     const fixed = currentState.phase === 'boards' || currentState.phase === 'revealed';
+    if (!fixed && lastGuessDayInput.value < currentState.today) {
+      const confirmed = confirm(
+        'This closes guessing right now. After that, the last guessing day and Hints can’t be changed.',
+      );
+      if (!confirmed) return;
+    }
     const payload = fixed
       ? { dueDate: dueDateInput.value }
       : {
@@ -685,25 +701,43 @@ import Layout from '../_components/Layout.astro';
           dueDate: dueDateInput.value,
           hints: { first: hintFirstInput.value, middle: hintMiddleInput.value },
         };
+    settingsSaveButton.disabled = true;
     try {
       await api(configUrl, payload);
+      settingsSaveButton.disabled = false;
       settingsError.classList.add('hidden');
       await refresh();
     } catch (err) {
+      settingsSaveButton.disabled = false;
       showError(settingsError, err);
     }
   }
 
   async function addDecoy(): Promise<void> {
+    if (currentState?.phase === 'boards') {
+      const confirmed = confirm('The Boards are public now, so this name will appear on them right away. Add it anyway?');
+      if (!confirmed) return;
+    }
     const payload = { first: decoyFirstInput.value, middle: decoyMiddleInput.value };
+    decoyAddButton.disabled = true;
     try {
       await api(decoyUrl, payload);
+      decoyAddButton.disabled = false;
       decoyForm.reset();
       decoysError.classList.add('hidden');
       await refresh();
     } catch (err) {
+      decoyAddButton.disabled = false;
       showError(decoysError, err);
     }
+  }
+
+  /** The display names of a Board's currently checked (pre-lock) picks, in Candidate order. */
+  function pickedNames(id: BoardId): string[] {
+    const checkedKeys = new Set(boardCheckboxes[id].filter((cb) => cb.checked).map((cb) => cb.dataset.key as string));
+    const board = currentState?.boards[id];
+    if (!board) return [];
+    return board.candidates.filter((c) => checkedKeys.has(c.key)).map((c) => c.name);
   }
 
   async function doLock(): Promise<void> {
@@ -711,26 +745,33 @@ import Layout from '../_components/Layout.astro';
       first: boardCheckboxes.first.filter((cb) => cb.checked).map((cb) => cb.dataset.key as string),
       middle: boardCheckboxes.middle.filter((cb) => cb.checked).map((cb) => cb.dataset.key as string),
     };
+    lockButton.disabled = true;
     try {
       await api(lockUrl, payload);
+      lockButton.disabled = false;
       lockError.classList.add('hidden');
       await refresh();
     } catch (err) {
+      lockButton.disabled = false;
       showError(lockError, err);
     }
   }
 
   async function doReveal(first: string, middle: string): Promise<void> {
+    revealButton.disabled = true;
     try {
       await api(revealUrl, { first, middle });
+      revealButton.disabled = false;
       revealError.classList.add('hidden');
       await refresh();
     } catch (err) {
+      revealButton.disabled = false;
       showError(revealError, err);
     }
   }
 
-  async function openWithToken(token: string): Promise<void> {
+  async function openWithToken(rawToken: string): Promise<void> {
+    const token = rawToken.trim();
     setToken(token);
     gateError.classList.add('hidden');
     try {
@@ -762,7 +803,12 @@ import Layout from '../_components/Layout.astro';
 
   lockButton.addEventListener('click', () => {
     if (lockButton.disabled) return;
-    if (!confirm('Lock both Final Fives? This can’t be undone.')) return;
+    const confirmMessage = [
+      'Is the Answer checked on both Boards? After locking you can only Reveal a name from the Final Five. This can’t be undone.',
+      `First-name Final Five: ${pickedNames('first').join(', ')}`,
+      `Middle-name Final Five: ${pickedNames('middle').join(', ')}`,
+    ].join('\n');
+    if (!confirm(confirmMessage)) return;
     void doLock();
   });
 
