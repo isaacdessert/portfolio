@@ -40,7 +40,7 @@ One of two displays, the first-name Board and the middle-name Board, each showin
 _Avoid_: leaderboard, list
 
 **Candidate**:
-A distinct name on one Board, grouping every Guess that has it in that position.
+A distinct name on one Board, grouping every Guess and Decoy that has it in that position.
 _Avoid_: name, tile, option
 
 **Eliminated**:
