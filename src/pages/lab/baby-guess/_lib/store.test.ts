@@ -1,6 +1,7 @@
 // Redis game store, against the in-memory fake. See
 // docs/superpowers/specs/2026-11-18-baby-guess-design.md §5.
 
+import { HttpError } from '@lab/api';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeHashKv } from './__fixtures__/fakeKv';
 import { createGameStore, keySpaceFromEnv } from './store';
@@ -66,6 +67,23 @@ it('keeps key spaces apart', async () => {
 it('reads the key space from VERCEL_ENV', () => {
   vi.stubEnv('VERCEL_ENV', 'production');
   expect(keySpaceFromEnv()).toBe('production');
+});
+
+it('stays "development" when neither VERCEL nor VERCEL_ENV is set', () => {
   vi.stubEnv('VERCEL_ENV', '');
+  vi.stubEnv('VERCEL', '');
   expect(keySpaceFromEnv()).toBe('development');
+});
+
+it('refuses to guess the key space when VERCEL is set but VERCEL_ENV is not', () => {
+  vi.stubEnv('VERCEL_ENV', '');
+  vi.stubEnv('VERCEL', '1');
+  let caught: unknown;
+  try {
+    keySpaceFromEnv();
+  } catch (err) {
+    caught = err;
+  }
+  expect(caught).toBeInstanceOf(HttpError);
+  expect(caught).toMatchObject({ status: 500, message: 'VERCEL_ENV missing; refusing to guess the key space' });
 });

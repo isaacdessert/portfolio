@@ -189,6 +189,21 @@ describe('saveConfig', () => {
     expect(updated.lock!.boards.first.anchor).toEqual(expectedAnchor);
     expect(updated.lock!.boards.middle.anchor).toEqual(expectedAnchor);
   });
+
+  it('resending the same Due Date after the lock leaves both Boards’ anchors unchanged', async () => {
+    clock = '2027-01-02T12:00:00Z';
+    await seedCandidates(d);
+
+    clock = '2027-01-06T12:00:00Z';
+    await lockBoards(d, LOCK_PICKS);
+    const locked = (await d.store.load()).game!;
+
+    clock = '2027-01-10T12:00:00Z';
+    const updated = await saveConfig(d, { dueDate: locked.dueDate });
+
+    expect(updated.lock!.boards.first.anchor).toEqual(locked.lock!.boards.first.anchor);
+    expect(updated.lock!.boards.middle.anchor).toEqual(locked.lock!.boards.middle.anchor);
+  });
 });
 
 it('adds and removes Decoys and Guesses until the lock, then refuses with 409 The Boards are locked.', async () => {

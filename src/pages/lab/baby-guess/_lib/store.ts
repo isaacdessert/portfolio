@@ -1,7 +1,7 @@
 // Thin storage adapter over the shared lab KV. See
 // docs/superpowers/specs/2026-11-18-baby-guess-design.md §5.
 
-import { readEnv } from '@lab/api';
+import { HttpError, readEnv } from '@lab/api';
 import type { LabKv } from '@lab/kv';
 import { normalize } from './names';
 import type { Decoy, Game, GameData, Guess } from './game';
@@ -77,7 +77,14 @@ export function createGameStore(kv: HashKv, keySpace: string, newId: () => strin
   };
 }
 
-/** The active key space: `VERCEL_ENV` ("preview"/"production"), or "development" locally. */
+/**
+ * The active key space: `VERCEL_ENV` ("preview"/"production"), or "development" locally. On
+ * Vercel (`VERCEL` set) `VERCEL_ENV` must also be set — fail closed rather than guess, since a
+ * wrong guess here could point a rehearsal at the real game's keys.
+ */
 export function keySpaceFromEnv(): string {
-  return readEnv('VERCEL_ENV') ?? 'development';
+  const vercelEnv = readEnv('VERCEL_ENV');
+  if (vercelEnv) return vercelEnv;
+  if (readEnv('VERCEL')) throw new HttpError(500, 'VERCEL_ENV missing; refusing to guess the key space');
+  return 'development';
 }

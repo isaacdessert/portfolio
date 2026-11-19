@@ -3,7 +3,7 @@
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MS_PER_DAY = 86_400_000;
 
-const CENTRAL_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+const CENTRAL_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Chicago',
   year: 'numeric',
   month: '2-digit',
@@ -13,9 +13,15 @@ const CENTRAL_FORMATTER = new Intl.DateTimeFormat('en-CA', {
 /** A calendar date in `YYYY-MM-DD` form, with no time of day or zone of its own. */
 export type Day = string;
 
-/** The calendar Day in America/Chicago containing `now`. */
+/**
+ * The calendar Day in America/Chicago containing `now`. Assembled from `formatToParts`'s
+ * year/month/day values rather than the formatter's own date pattern, so the `YYYY-MM-DD` shape
+ * can't shift with the locale's separator or field order.
+ */
 export function centralDay(now: Date): Day {
-  return CENTRAL_FORMATTER.format(now);
+  const parts = CENTRAL_FORMATTER.formatToParts(now);
+  const part = (type: string) => parts.find((p) => p.type === type)!.value;
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 function toUtcMs(day: Day): number {

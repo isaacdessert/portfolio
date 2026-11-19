@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BOARDS, buildLock, type BoardId, type GameData, type Guess } from './game';
 import { addDays, daysBetween, type Day } from './days';
-import { eliminatedCount } from './pacing';
+import { eliminatedCount, reanchor } from './pacing';
 import { hostState, publicState } from './project';
 
 const hints = { first: 'Two syllables', middle: 'A family name' };
@@ -165,6 +165,62 @@ it('an early Reveal before the lock shows nothing Eliminated', () => {
   expect(state.phase).toBe('revealed');
   if (state.phase !== 'revealed') throw new Error('unreachable');
   for (const b of BOARDS) for (const c of state.boards[b]) expect(c.eliminated).toBe(false);
+});
+
+it('moving the Due Date after the lock never lowers the public Eliminated count, and lands on the Final Five (spec §7)', () => {
+  const data = lockedFixture('2027-01-06');
+  const game = data.game!;
+  const finalFiveNames: Record<BoardId, Set<string>> = {
+    first: new Set(LOCK_PICKS.first),
+    middle: new Set(LOCK_PICKS.middle),
+  };
+
+  /** The public Eliminated count per Board on `day`, checked against the pacing oracle. */
+  function eliminatedCounts(day: Day): Record<BoardId, number> {
+    const state = publicState(data, day);
+    if (state.phase !== 'boards') throw new Error(`expected phase 'boards', got '${state.phase}'`);
+    const counts = {} as Record<BoardId, number>;
+    for (const b of BOARDS) {
+      const eliminated = state.boards[b].filter((c) => c.eliminated);
+      expect(eliminated).toHaveLength(expectedEliminated(data, b, day));
+      for (const c of eliminated) expect(finalFiveNames[b].has(c.name)).toBe(false);
+      counts[b] = eliminated.length;
+    }
+    return counts;
+  }
+
+  /** Mirrors `saveConfig`'s re-anchor block in `_lib/actions.ts` exactly. */
+  function moveDueDate(newDueDate: Day, today: Day): void {
+    const oldDueDate = game.dueDate;
+    for (const board of BOARDS) {
+      const boardLock = game.lock!.boards[board];
+      boardLock.anchor = reanchor(boardLock.order.length, boardLock.anchor, oldDueDate, today);
+    }
+    game.dueDate = newDueDate;
+  }
+
+  const before = eliminatedCounts('2027-01-16');
+
+  // Move the Due Date earlier, on 01-16.
+  moveDueDate('2027-01-18', '2027-01-16');
+  const afterEarlierMove = eliminatedCounts('2027-01-16');
+  for (const b of BOARDS) expect(afterEarlierMove[b]).toBeGreaterThanOrEqual(before[b]);
+
+  const midway = eliminatedCounts('2027-01-17');
+  for (const b of BOARDS) expect(midway[b]).toBeGreaterThanOrEqual(afterEarlierMove[b]);
+
+  // Move the Due Date later, on a different day, 01-17.
+  moveDueDate('2027-01-25', '2027-01-17');
+  const afterLaterMove = eliminatedCounts('2027-01-17');
+  for (const b of BOARDS) expect(afterLaterMove[b]).toBeGreaterThanOrEqual(midway[b]);
+
+  // On the new Due Date, exactly the Final Five remain on each Board.
+  const onNewDueDate = publicState(data, '2027-01-25');
+  if (onNewDueDate.phase !== 'boards') throw new Error(`expected phase 'boards', got '${onNewDueDate.phase}'`);
+  for (const b of BOARDS) {
+    const remaining = onNewDueDate.boards[b].filter((c) => !c.eliminated).map((c) => c.name);
+    expect(new Set(remaining)).toEqual(finalFiveNames[b]);
+  }
 });
 
 it('hostState gives the Host counts, Decoys, defaults before the lock and the schedule after it', () => {
