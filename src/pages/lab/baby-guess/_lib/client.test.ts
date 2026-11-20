@@ -6,7 +6,18 @@
 
 import { describe, expect, it } from 'vitest';
 import type { GuessInput } from './actions';
-import { boardFromHash, forgetGuess, GUESS_KEY, recallGuess, rememberGuess } from './client';
+import {
+  blockLetter,
+  boardFromHash,
+  forgetGuess,
+  GUESS_KEY,
+  newlyEliminated,
+  recallGuess,
+  recallSeen,
+  rememberGuess,
+  rememberSeen,
+  SEEN_KEY,
+} from './client';
 
 /** A minimal in-memory `Storage`, since vitest's node environment has no real one. */
 function memoryStorage(initial: Record<string, string> = {}): Storage {
@@ -79,4 +90,46 @@ describe('boardFromHash', () => {
     ['', 'first'],
     ['#nope', 'first'],
   ])('boardFromHash(%j) is %s', (h, b) => expect(boardFromHash(h)).toBe(b));
+});
+
+describe('blockLetter', () => {
+  it.each([
+    ['Amelia', 'A'],
+    ['zoë', 'Z'],
+    ['Élise', 'É'],
+    ["O'Brien", 'O'],
+    ['mary-kate', 'M'],
+  ])('blockLetter(%j) is %s', (name, letter) => expect(blockLetter(name)).toBe(letter));
+});
+
+describe('newlyEliminated', () => {
+  it('is empty on the first visit, so nothing tips over for a newcomer', () => {
+    expect(newlyEliminated(null, { first: ['Ava'], middle: ['Rose'] })).toEqual({ first: [], middle: [] });
+  });
+
+  it('lists names ruled out since the last visit, per Board', () => {
+    const previous = { first: ['Ava'], middle: [] };
+    expect(newlyEliminated(previous, { first: ['Ava', 'Emma', 'Leo'], middle: ['June'] })).toEqual({
+      first: ['Emma', 'Leo'],
+      middle: ['June'],
+    });
+  });
+});
+
+describe('rememberSeen / recallSeen', () => {
+  it('round-trips what this device has seen ruled out', () => {
+    const storage = memoryStorage();
+    rememberSeen(storage, { first: ['Ava'], middle: ['Rose', 'June'] });
+    expect(recallSeen(storage)).toEqual({ first: ['Ava'], middle: ['Rose', 'June'] });
+  });
+
+  it('returns null with no storage, blocked storage, junk or the wrong shape', () => {
+    expect(recallSeen(undefined)).toBeNull();
+    expect(recallSeen(throwing)).toBeNull();
+    expect(recallSeen(memoryStorage({ [SEEN_KEY]: '{nope' }))).toBeNull();
+    expect(recallSeen(memoryStorage({ [SEEN_KEY]: '{"first":["Ava"],"middle":"Rose"}' }))).toBeNull();
+  });
+
+  it('never throws when storage is blocked', () =>
+    expect(() => rememberSeen(throwing, { first: [], middle: [] })).not.toThrow());
 });

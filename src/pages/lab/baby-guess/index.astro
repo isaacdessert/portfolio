@@ -119,8 +119,8 @@ import Layout from './_components/Layout.astro';
               Middle name
             </button>
           </div>
-          <ul id="board-panel-first" role="tabpanel" aria-labelledby="board-tab-first" class="mt-4 space-y-1"></ul>
-          <ul id="board-panel-middle" role="tabpanel" aria-labelledby="board-tab-middle" class="mt-4 space-y-1 hidden"></ul>
+          <div id="board-panel-first" role="tabpanel" aria-labelledby="board-tab-first" tabindex="0" class="mt-4"></div>
+          <div id="board-panel-middle" role="tabpanel" aria-labelledby="board-tab-middle" tabindex="0" class="mt-4 hidden"></div>
         </div>
       </section>
 
@@ -167,13 +167,14 @@ import Layout from './_components/Layout.astro';
               Middle name
             </button>
           </div>
-          <ul id="revealed-panel-first" role="tabpanel" aria-labelledby="revealed-tab-first" class="mt-4 space-y-1"></ul>
-          <ul
+          <div id="revealed-panel-first" role="tabpanel" aria-labelledby="revealed-tab-first" tabindex="0" class="mt-4"></div>
+          <div
             id="revealed-panel-middle"
             role="tabpanel"
             aria-labelledby="revealed-tab-middle"
-            class="mt-4 space-y-1 hidden"
-          ></ul>
+            tabindex="0"
+            class="mt-4 hidden"
+          ></div>
         </div>
 
         <div class="mt-6">
@@ -197,7 +198,17 @@ import Layout from './_components/Layout.astro';
 </Layout>
 
 <script>
-  import { boardFromHash, forgetGuess, recallGuess, rememberGuess } from './_lib/client';
+  import {
+    blockLetter,
+    boardFromHash,
+    forgetGuess,
+    newlyEliminated,
+    recallGuess,
+    recallSeen,
+    rememberGuess,
+    rememberSeen,
+    type SeenEliminated,
+  } from './_lib/client';
   import type { GuessInput } from './_lib/actions';
   import type { BoardId } from './_lib/game';
   import type { PublicCandidate, PublicState } from './_lib/project';
@@ -256,7 +267,7 @@ import Layout from './_components/Layout.astro';
 
   interface TabRefs {
     tabs: Record<BoardId, HTMLButtonElement>;
-    panels: Record<BoardId, HTMLUListElement>;
+    panels: Record<BoardId, HTMLDivElement>;
   }
 
   /** The tabs/panels for whichever phase is currently showing, so `hashchange` knows what to re-select. */
@@ -269,8 +280,8 @@ import Layout from './_components/Layout.astro';
         middle: document.getElementById(`${prefix}-tab-middle`) as HTMLButtonElement,
       },
       panels: {
-        first: document.getElementById(`${prefix}-panel-first`) as HTMLUListElement,
-        middle: document.getElementById(`${prefix}-panel-middle`) as HTMLUListElement,
+        first: document.getElementById(`${prefix}-panel-first`) as HTMLDivElement,
+        middle: document.getElementById(`${prefix}-panel-middle`) as HTMLDivElement,
       },
     };
   }
@@ -322,41 +333,124 @@ import Layout from './_components/Layout.astro';
 
   type RevealedCandidate = PublicCandidate & { answer?: boolean };
 
-  function renderCandidateList(panel: HTMLUListElement, candidates: RevealedCandidate[]): void {
+  interface BoardOptions {
+    /** Show "N of M still in the running" with a progress bar (not after the Reveal). */
+    meter: boolean;
+    /** Names ruled out since this device last looked; their blocks tip over in front of the visitor. */
+    newlyOut: ReadonlySet<string>;
+  }
+
+  /** Colours cycle along the Board like a toy set; position is stable because the Board is alphabetical. */
+  const BLOCK_COLORS = ['red', 'sage', 'gold', 'sky'] as const;
+
+  function sr(text: string): HTMLSpanElement {
+    const span = document.createElement('span');
+    span.className = 'sr-only';
+    span.textContent = text;
+    return span;
+  }
+
+  /** A decorative wooden ABC block showing `letter`; screen readers get the name next to it instead. */
+  function renderBlock(letter: string, color: string): HTMLSpanElement {
+    const block = document.createElement('span');
+    block.className = `block block--${color}`;
+    block.setAttribute('aria-hidden', 'true');
+    const top = document.createElement('span');
+    top.className = 'block-top';
+    const side = document.createElement('span');
+    side.className = 'block-side';
+    const front = document.createElement('span');
+    front.className = 'block-front';
+    front.textContent = letter;
+    block.append(top, side, front);
+    return block;
+  }
+
+  function renderMeter(candidates: RevealedCandidate[]): HTMLDivElement {
+    const total = candidates.length;
+    const left = candidates.filter((candidate) => !candidate.eliminated).length;
+    const wrap = document.createElement('div');
+    const text = document.createElement('p');
+    text.className = 'text-sm';
+    text.style.color = 'var(--muted)';
+    const count = document.createElement('strong');
+    count.style.color = 'var(--ink)';
+    count.textContent = `${left} of ${total}`;
+    text.append(count, ' still in the running');
+    const bar = document.createElement('div');
+    bar.className = 'board-meter-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('span');
+    fill.style.width = `${total ? (left / total) * 100 : 0}%`;
+    bar.appendChild(fill);
+    wrap.append(text, bar);
+    return wrap;
+  }
+
+  function renderCandidateBoard(panel: HTMLDivElement, candidates: RevealedCandidate[], options: BoardOptions): void {
     panel.textContent = '';
-    for (const candidate of candidates) {
-      const li = document.createElement('li');
+    if (options.meter) panel.appendChild(renderMeter(candidates));
+
+    const fresh = candidates.filter((candidate) => candidate.eliminated && options.newlyOut.has(candidate.name));
+    if (fresh.length > 0) {
+      const since = document.createElement('p');
+      since.className = 'mt-2 text-sm font-bold';
+      since.style.color = 'var(--accent-strong)';
+      since.textContent =
+        fresh.length === 1
+          ? '1 more name ruled out since you last checked'
+          : `${fresh.length} more names ruled out since you last checked`;
+      panel.appendChild(since);
+    }
+
+    const grid = document.createElement('ul');
+    grid.className = 'board-grid';
+    let tipOrder = 0;
+    candidates.forEach((candidate, index) => {
+      const cell = document.createElement('li');
+      cell.className = 'board-cell';
+      const block = renderBlock(blockLetter(candidate.name), BLOCK_COLORS[index % BLOCK_COLORS.length]);
       const name = document.createElement('span');
+      name.className = 'board-name';
       name.textContent = candidate.name;
-      li.appendChild(name);
+      cell.append(block, name);
 
       if (candidate.eliminated) {
-        li.classList.add('line-through');
-        li.style.color = 'var(--gone)';
-        const ruledOut = document.createElement('span');
-        ruledOut.className = 'sr-only';
-        ruledOut.textContent = ' (ruled out)';
-        li.appendChild(ruledOut);
+        cell.classList.add('is-out');
+        cell.appendChild(sr(' (ruled out)'));
+        if (options.newlyOut.has(candidate.name)) {
+          // Tip over one after another. The animation only runs once the panel is visible; drop the
+          // class when it ends so switching tabs later doesn't replay it.
+          cell.classList.add('is-new-out');
+          block.style.animationDelay = `${400 + tipOrder++ * 250}ms`;
+          block.addEventListener('animationend', () => cell.classList.remove('is-new-out'), { once: true });
+        }
       }
 
       if (candidate.answer) {
-        li.classList.add('rounded', 'px-1');
-        li.style.boxShadow = '0 0 0 2px var(--accent)';
-        const answerLabel = document.createElement('span');
-        answerLabel.className = 'sr-only';
-        answerLabel.textContent = ' (the Answer)';
-        li.appendChild(answerLabel);
+        cell.classList.add('is-answer');
+        cell.appendChild(sr(' (the Answer)'));
       }
 
-      panel.appendChild(li);
-    }
+      grid.appendChild(cell);
+    });
+    panel.appendChild(grid);
   }
 
   /** Builds (or rebuilds) one phase's board tabs, selects the Board named by the current hash, and wires it up. */
-  function renderBoards(prefix: string, boards: Record<BoardId, RevealedCandidate[]>): void {
+  function renderBoards(
+    prefix: string,
+    boards: Record<BoardId, RevealedCandidate[]>,
+    options: { meter: boolean; newlyOut?: Record<BoardId, ReadonlySet<string>> },
+  ): void {
     const refs = getTabRefs(prefix);
     wireTabs(refs);
-    for (const id of BOARD_IDS) renderCandidateList(refs.panels[id], boards[id]);
+    for (const id of BOARD_IDS) {
+      renderCandidateBoard(refs.panels[id], boards[id], {
+        meter: options.meter,
+        newlyOut: options.newlyOut?.[id] ?? new Set(),
+      });
+    }
     selectTab(refs, boardFromHash(location.hash));
     activeTabs = refs;
   }
@@ -474,7 +568,19 @@ import Layout from './_components/Layout.astro';
 
   function renderBoardsPhase(state: Extract<PublicState, { phase: 'boards' }>): void {
     renderHints(document.getElementById('boards-hints') as HTMLDListElement, state.hints);
-    renderBoards('board', state.boards);
+
+    // Compare with what this device saw last time, so newly ruled-out blocks tip over on arrival.
+    const storage = safeLocalStorage();
+    const eliminatedNow = (board: BoardId) =>
+      state.boards[board].filter((candidate) => candidate.eliminated).map((candidate) => candidate.name);
+    const current: SeenEliminated = { first: eliminatedNow('first'), middle: eliminatedNow('middle') };
+    const fresh = newlyEliminated(recallSeen(storage), current);
+    rememberSeen(storage, current);
+
+    renderBoards('board', state.boards, {
+      meter: true,
+      newlyOut: { first: new Set(fresh.first), middle: new Set(fresh.middle) },
+    });
   }
 
   function renderWinners(winners: string[]): void {
@@ -527,7 +633,7 @@ import Layout from './_components/Layout.astro';
     heading.textContent = `It’s ${state.answer.first} ${state.answer.middle}!`;
     renderWinners(state.winners);
     renderPartialWinners(state.partialWinners);
-    renderBoards('revealed', state.boards);
+    renderBoards('revealed', state.boards, { meter: false });
     renderGuessesTable(state.guesses);
   }
 
