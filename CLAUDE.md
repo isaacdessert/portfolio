@@ -9,6 +9,7 @@ Isaac Dessert's personal site: **https://isaacdessert.dev** (no "j" in the domai
 ```bash
 npm install
 npm run dev        # http://localhost:4321/
+npm run dev:local  # same, but lab KV/rate limits use an in-memory Redis stub (scripts/dev-kv.mjs)
 npm test           # vitest: unit tests + lab isolation check
 npm run build      # isolation check → astro build → scripts/vercel-routes.mjs (output: .vercel/output/)
 npm run new <slug> # scaffold a lab project (add `-- --api` for a rate-limited endpoint)
@@ -17,6 +18,14 @@ npm run new <slug> # scaffold a lab project (add `-- --api` for a rate-limited e
 Local secrets: `vercel env pull .env --environment=preview` (the Development environment has no
 variables). Values that come back as `[SENSITIVE]` were withheld by Vercel — re-pull in a normal
 terminal or paste real values; without them Notion posts and Redis don't load locally.
+`npm run dev:local` needs no Redis credentials: it serves Upstash's REST protocol from memory on
+`127.0.0.1:8079`, overrides `KV_REST_API_*` and sets `VERCEL_ENV=development` (key space
+`development`) and a local `BABY_GUESS_HOST_TOKEN`. That token is never hard-coded: it comes from
+your env if set, else from the macOS Keychain item "baby-guess local host token" (created on first
+run; copy it with `security find-generic-password -s 'baby-guess local host token' -w | pbcopy`).
+Data is lost when it stops. It only implements the commands the lab uses; anything else errors by name.
+The production and preview Host tokens are Vercel **Sensitive** env vars; Isaac's copies live in the
+Keychain as "baby-guess host token (production)" / "(preview)" — never in the repo or `.env`.
 
 ## Architecture
 
