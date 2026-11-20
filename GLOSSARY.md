@@ -17,8 +17,16 @@ A friend or family member taking part in the game.
 _Avoid_: user, player, participant
 
 **Guess**:
-One first and middle name submitted by a Guesser. Each Guesser makes exactly one.
+One first and middle name, plus a guess at each Birth Detail, submitted by a Guesser. Each Guesser makes exactly one.
 _Avoid_: entry, submission, vote
+
+**Birth Details**:
+The baby's birth date, time of birth, weight and length: guessed in every Guess, and entered by the Host at the Reveal.
+_Avoid_: stats, birth stats, baby pool
+
+**Closest Winner**:
+A Guesser whose guess at one Birth Detail is nearest the real value; ties share the win.
+_Avoid_: stat winner
 
 **Decoy**:
 A made-up first and middle name the Host adds, counted and shown like a Guess but belonging to no Guesser, so that a name nobody guessed, such as the Answer, can't be singled out. A Decoy never wins.
