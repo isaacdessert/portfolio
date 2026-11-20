@@ -23,6 +23,9 @@ export interface RedisLike {
   incr(key: string): Promise<number>;
   del(...keys: string[]): Promise<number>;
   expire(key: string, seconds: number): Promise<number>;
+  hsetnx(key: string, field: string, value: unknown): Promise<0 | 1>;
+  hgetall<T extends Record<string, unknown>>(key: string): Promise<T | null>;
+  hdel(key: string, ...fields: string[]): Promise<number>;
 }
 
 export interface LabKv {
@@ -31,6 +34,9 @@ export interface LabKv {
   incr(key: string): Promise<number>;
   del(key: string): Promise<void>;
   expire(key: string, seconds: number): Promise<void>;
+  hsetnx(key: string, field: string, value: unknown): Promise<boolean>;
+  hgetall<T = unknown>(key: string): Promise<Record<string, T>>;
+  hdel(key: string, field: string): Promise<void>;
 }
 
 /** Key-value store scoped to one project: every key is stored as lab:<slug>:<key>. */
@@ -48,6 +54,17 @@ export function createKv(slug: string, getClient: () => RedisLike): LabKv {
     },
     async expire(key, seconds) {
       await getClient().expire(k(key), seconds);
+    },
+    async hsetnx(key, field, value) {
+      const result = await getClient().hsetnx(k(key), field, value);
+      return result === 1;
+    },
+    async hgetall<T = unknown>(key) {
+      const result = await getClient().hgetall<Record<string, T>>(k(key));
+      return result ?? {};
+    },
+    async hdel(key, field) {
+      await getClient().hdel(k(key), field);
     },
   };
 }

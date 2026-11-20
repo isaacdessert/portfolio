@@ -1,0 +1,665 @@
+---
+// The Guesser page: fetches the public state once and renders whichever phase it's in. See
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3.
+import { labUrl } from '@lab/url';
+import Layout from './_components/Layout.astro';
+---
+
+<Layout title="Baby Guess" description="Guess the baby’s first and middle name before guessing closes.">
+  <div class="max-w-md mx-auto px-4 py-10">
+    <div id="app" data-state={labUrl('baby-guess', 'api/state')} data-guess={labUrl('baby-guess', 'api/guess')}>
+      <p id="loading">Loading&hellip;</p>
+      <p id="error" class="hidden">Something went wrong. Try reloading.</p>
+
+      <section id="setup" class="hidden">
+        <p>Guessing opens soon.</p>
+      </section>
+
+      <section id="guessing" class="hidden">
+        <h1 class="text-2xl font-bold" style="color: var(--accent-strong)">Guess the baby’s name</h1>
+
+        <dl id="guessing-hints" class="mt-4 space-y-2 text-sm"></dl>
+
+        <p id="guessing-count" class="mt-4 text-sm" style="color: var(--muted)"></p>
+        <p id="guessing-deadline" class="mt-1 text-sm" style="color: var(--muted)"></p>
+
+        <form id="guess-form" class="mt-6 space-y-4">
+          <div class="flex flex-col gap-1">
+            <label for="guesser-input" class="text-sm font-semibold">Your name</label>
+            <input
+              id="guesser-input"
+              name="guesser"
+              type="text"
+              required
+              maxlength="50"
+              autocomplete="name"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="baby-first" class="text-sm font-semibold">Baby’s first name</label>
+            <input
+              id="baby-first"
+              name="baby-first"
+              type="text"
+              required
+              maxlength="30"
+              autocomplete="off"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="baby-middle" class="text-sm font-semibold">Baby’s middle name</label>
+            <input
+              id="baby-middle"
+              name="baby-middle"
+              type="text"
+              required
+              maxlength="30"
+              autocomplete="off"
+              class="rounded-lg border px-3 py-2"
+              style="border-color: var(--gone); background: var(--card)"
+            />
+          </div>
+
+          <p id="guess-error" class="hidden text-sm" role="alert" style="color: var(--accent-strong)"></p>
+
+          <button
+            type="submit"
+            id="guess-submit"
+            class="w-full rounded-lg px-4 py-2 font-semibold text-white disabled:opacity-50"
+            style="background: var(--accent-strong)"
+          >
+            Send my guess
+          </button>
+        </form>
+
+        <div id="guess-done-wrap" class="hidden mt-6">
+          <p id="guess-done" class="font-semibold"></p>
+          <button
+            type="button"
+            id="guess-forget"
+            class="mt-2 text-sm underline underline-offset-2"
+            style="color: var(--muted)"
+          >
+            Guess for someone else
+          </button>
+        </div>
+      </section>
+
+      <section id="boards" class="hidden">
+        <h1 class="text-2xl font-bold" style="color: var(--accent-strong)">The Boards</h1>
+
+        <dl id="boards-hints" class="mt-4 space-y-2 text-sm"></dl>
+
+        <p class="mt-4 text-sm" style="color: var(--muted)">
+          Guessing is closed. Each day more names are ruled out, until five are left on each Board.
+        </p>
+
+        <div class="mt-6">
+          <div id="board-tabs" role="tablist" aria-label="Boards" class="flex gap-2 border-b" style="border-color: var(--gone)">
+            <button
+              id="board-tab-first"
+              type="button"
+              role="tab"
+              aria-controls="board-panel-first"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              First name
+            </button>
+            <button
+              id="board-tab-middle"
+              type="button"
+              role="tab"
+              aria-controls="board-panel-middle"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              Middle name
+            </button>
+          </div>
+          <div id="board-panel-first" role="tabpanel" aria-labelledby="board-tab-first" tabindex="0" class="mt-4"></div>
+          <div id="board-panel-middle" role="tabpanel" aria-labelledby="board-tab-middle" tabindex="0" class="mt-4 hidden"></div>
+        </div>
+      </section>
+
+      <section id="revealed" class="hidden">
+        <h1 id="revealed-heading" class="text-2xl font-bold" style="color: var(--accent-strong)"></h1>
+
+        <div class="mt-6">
+          <h2 class="font-bold">Winners</h2>
+          <p id="revealed-no-winners" class="hidden mt-1 text-sm" style="color: var(--muted)">
+            Nobody got both names.
+          </p>
+          <ul id="revealed-winners" class="mt-1 space-y-1"></ul>
+        </div>
+
+        <div id="revealed-partial-wrap" class="hidden mt-6">
+          <h2 class="font-bold">Partial winners</h2>
+          <ul id="revealed-partial" class="mt-1 space-y-1"></ul>
+        </div>
+
+        <div class="mt-6">
+          <div
+            id="revealed-tabs"
+            role="tablist"
+            aria-label="Boards"
+            class="flex gap-2 border-b"
+            style="border-color: var(--gone)"
+          >
+            <button
+              id="revealed-tab-first"
+              type="button"
+              role="tab"
+              aria-controls="revealed-panel-first"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              First name
+            </button>
+            <button
+              id="revealed-tab-middle"
+              type="button"
+              role="tab"
+              aria-controls="revealed-panel-middle"
+              class="px-3 py-2 text-sm font-semibold border-b-2"
+            >
+              Middle name
+            </button>
+          </div>
+          <div id="revealed-panel-first" role="tabpanel" aria-labelledby="revealed-tab-first" tabindex="0" class="mt-4"></div>
+          <div
+            id="revealed-panel-middle"
+            role="tabpanel"
+            aria-labelledby="revealed-tab-middle"
+            tabindex="0"
+            class="mt-4 hidden"
+          ></div>
+        </div>
+
+        <div class="mt-6">
+          <h2 class="font-bold">Everyone’s guesses</h2>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th scope="col" class="py-1 pr-2">Guesser</th>
+                  <th scope="col" class="py-1 pr-2">First</th>
+                  <th scope="col" class="py-1">Middle</th>
+                </tr>
+              </thead>
+              <tbody id="revealed-guesses"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import {
+    blockLetter,
+    boardFromHash,
+    forgetGuess,
+    newlyEliminated,
+    recallGuess,
+    recallSeen,
+    rememberGuess,
+    rememberSeen,
+    type SeenEliminated,
+  } from './_lib/client';
+  import type { GuessInput } from './_lib/actions';
+  import type { BoardId } from './_lib/game';
+  import type { PublicCandidate, PublicState } from './_lib/project';
+
+  const app = document.getElementById('app') as HTMLDivElement;
+  const stateUrl = app.dataset.state!;
+  const guessUrl = app.dataset.guess!;
+
+  const SECTION_IDS = ['loading', 'error', 'setup', 'guessing', 'boards', 'revealed'] as const;
+  type SectionId = (typeof SECTION_IDS)[number];
+
+  const sections: Record<SectionId, HTMLElement> = {
+    loading: document.getElementById('loading')!,
+    error: document.getElementById('error')!,
+    setup: document.getElementById('setup')!,
+    guessing: document.getElementById('guessing')!,
+    boards: document.getElementById('boards')!,
+    revealed: document.getElementById('revealed')!,
+  };
+
+  function showSection(id: SectionId): void {
+    for (const sectionId of SECTION_IDS) sections[sectionId].classList.toggle('hidden', sectionId !== id);
+  }
+
+  /** `window.localStorage` can itself throw (private mode, disabled cookies) — never let that break the page. */
+  function safeLocalStorage(): Storage | undefined {
+    try {
+      return window.localStorage;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // --- Hints (shared by the guessing and boards phases) ---
+
+  function renderHints(container: HTMLDListElement, hints: Record<BoardId, string>): void {
+    container.textContent = '';
+    const rows: [string, string][] = [
+      ['First name hint', hints.first],
+      ['Middle name hint', hints.middle],
+    ];
+    for (const [label, value] of rows) {
+      const dt = document.createElement('dt');
+      dt.className = 'font-semibold';
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      container.append(dt, dd);
+    }
+  }
+
+  // --- Board tabs (shared by the boards and revealed phases) ---
+
+  const BOARD_IDS: BoardId[] = ['first', 'middle'];
+  const BOARD_LABEL: Record<BoardId, string> = { first: 'First name', middle: 'Middle name' };
+
+  interface TabRefs {
+    tabs: Record<BoardId, HTMLButtonElement>;
+    panels: Record<BoardId, HTMLDivElement>;
+  }
+
+  /** The tabs/panels for whichever phase is currently showing, so `hashchange` knows what to re-select. */
+  let activeTabs: TabRefs | null = null;
+
+  function getTabRefs(prefix: string): TabRefs {
+    return {
+      tabs: {
+        first: document.getElementById(`${prefix}-tab-first`) as HTMLButtonElement,
+        middle: document.getElementById(`${prefix}-tab-middle`) as HTMLButtonElement,
+      },
+      panels: {
+        first: document.getElementById(`${prefix}-panel-first`) as HTMLDivElement,
+        middle: document.getElementById(`${prefix}-panel-middle`) as HTMLDivElement,
+      },
+    };
+  }
+
+  function selectTab(refs: TabRefs, board: BoardId): void {
+    for (const id of BOARD_IDS) {
+      const selected = id === board;
+      const tab = refs.tabs[id];
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      tab.style.borderBottomColor = selected ? 'var(--accent)' : 'transparent';
+      tab.style.color = selected ? 'var(--ink)' : 'var(--muted)';
+      refs.panels[id].classList.toggle('hidden', !selected);
+    }
+  }
+
+  /**
+   * Selecting a tab shouldn't add a Back-button stop for every Board switch, so it updates the
+   * hash with `replaceState` instead of `location.hash =` (which pushes a new history entry).
+   * `hashchange` still fires for an incoming `#middle` link (a real navigation), since that
+   * doesn't go through this function.
+   */
+  function setBoardHash(board: BoardId): void {
+    const hash = `#${board}`;
+    if (location.hash !== hash) history.replaceState(null, '', hash);
+  }
+
+  /** Wires click + Left/Right arrow key navigation. Only needs doing once per tablist instance. */
+  function wireTabs(refs: TabRefs): void {
+    for (const id of BOARD_IDS) {
+      const tab = refs.tabs[id];
+      tab.textContent = BOARD_LABEL[id];
+      tab.addEventListener('click', () => {
+        setBoardHash(id);
+        selectTab(refs, id);
+      });
+      tab.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const i = BOARD_IDS.indexOf(id);
+        const delta = event.key === 'ArrowRight' ? 1 : -1;
+        const next = BOARD_IDS[(i + delta + BOARD_IDS.length) % BOARD_IDS.length];
+        refs.tabs[next].focus();
+        setBoardHash(next);
+        selectTab(refs, next);
+      });
+    }
+  }
+
+  type RevealedCandidate = PublicCandidate & { answer?: boolean };
+
+  interface BoardOptions {
+    /** Show "N of M still in the running" with a progress bar (not after the Reveal). */
+    meter: boolean;
+    /** Names ruled out since this device last looked; their blocks tip over in front of the visitor. */
+    newlyOut: ReadonlySet<string>;
+  }
+
+  /** Colours cycle along the Board like a toy set; position is stable because the Board is alphabetical. */
+  const BLOCK_COLORS = ['red', 'sage', 'gold', 'sky'] as const;
+
+  function sr(text: string): HTMLSpanElement {
+    const span = document.createElement('span');
+    span.className = 'sr-only';
+    span.textContent = text;
+    return span;
+  }
+
+  /** A decorative wooden ABC block showing `letter`; screen readers get the name next to it instead. */
+  function renderBlock(letter: string, color: string): HTMLSpanElement {
+    const block = document.createElement('span');
+    block.className = `block block--${color}`;
+    block.setAttribute('aria-hidden', 'true');
+    const top = document.createElement('span');
+    top.className = 'block-top';
+    const side = document.createElement('span');
+    side.className = 'block-side';
+    const front = document.createElement('span');
+    front.className = 'block-front';
+    front.textContent = letter;
+    block.append(top, side, front);
+    return block;
+  }
+
+  function renderMeter(candidates: RevealedCandidate[]): HTMLDivElement {
+    const total = candidates.length;
+    const left = candidates.filter((candidate) => !candidate.eliminated).length;
+    const wrap = document.createElement('div');
+    const text = document.createElement('p');
+    text.className = 'text-sm';
+    text.style.color = 'var(--muted)';
+    const count = document.createElement('strong');
+    count.style.color = 'var(--ink)';
+    count.textContent = `${left} of ${total}`;
+    text.append(count, ' still in the running');
+    const bar = document.createElement('div');
+    bar.className = 'board-meter-bar';
+    bar.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('span');
+    fill.style.width = `${total ? (left / total) * 100 : 0}%`;
+    bar.appendChild(fill);
+    wrap.append(text, bar);
+    return wrap;
+  }
+
+  function renderCandidateBoard(panel: HTMLDivElement, candidates: RevealedCandidate[], options: BoardOptions): void {
+    panel.textContent = '';
+    if (options.meter) panel.appendChild(renderMeter(candidates));
+
+    const fresh = candidates.filter((candidate) => candidate.eliminated && options.newlyOut.has(candidate.name));
+    if (fresh.length > 0) {
+      const since = document.createElement('p');
+      since.className = 'mt-2 text-sm font-bold';
+      since.style.color = 'var(--accent-strong)';
+      since.textContent =
+        fresh.length === 1
+          ? '1 more name ruled out since you last checked'
+          : `${fresh.length} more names ruled out since you last checked`;
+      panel.appendChild(since);
+    }
+
+    const grid = document.createElement('ul');
+    grid.className = 'board-grid';
+    let tipOrder = 0;
+    candidates.forEach((candidate, index) => {
+      const cell = document.createElement('li');
+      cell.className = 'board-cell';
+      const block = renderBlock(blockLetter(candidate.name), BLOCK_COLORS[index % BLOCK_COLORS.length]);
+      const name = document.createElement('span');
+      name.className = 'board-name';
+      name.textContent = candidate.name;
+      cell.append(block, name);
+
+      if (candidate.eliminated) {
+        cell.classList.add('is-out');
+        cell.appendChild(sr(' (ruled out)'));
+        if (options.newlyOut.has(candidate.name)) {
+          // Tip over one after another. The animation only runs once the panel is visible; drop the
+          // class when it ends so switching tabs later doesn't replay it.
+          cell.classList.add('is-new-out');
+          block.style.animationDelay = `${400 + tipOrder++ * 250}ms`;
+          block.addEventListener('animationend', () => cell.classList.remove('is-new-out'), { once: true });
+        }
+      }
+
+      if (candidate.answer) {
+        cell.classList.add('is-answer');
+        cell.appendChild(sr(' (the Answer)'));
+      }
+
+      grid.appendChild(cell);
+    });
+    panel.appendChild(grid);
+  }
+
+  /** Builds (or rebuilds) one phase's board tabs, selects the Board named by the current hash, and wires it up. */
+  function renderBoards(
+    prefix: string,
+    boards: Record<BoardId, RevealedCandidate[]>,
+    options: { meter: boolean; newlyOut?: Record<BoardId, ReadonlySet<string>> },
+  ): void {
+    const refs = getTabRefs(prefix);
+    wireTabs(refs);
+    for (const id of BOARD_IDS) {
+      renderCandidateBoard(refs.panels[id], boards[id], {
+        meter: options.meter,
+        newlyOut: options.newlyOut?.[id] ?? new Set(),
+      });
+    }
+    selectTab(refs, boardFromHash(location.hash));
+    activeTabs = refs;
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (activeTabs) selectTab(activeTabs, boardFromHash(location.hash));
+  });
+
+  // --- Guessing phase ---
+
+  const guessForm = document.getElementById('guess-form') as HTMLFormElement;
+  const guesserInput = document.getElementById('guesser-input') as HTMLInputElement;
+  const firstInput = document.getElementById('baby-first') as HTMLInputElement;
+  const middleInput = document.getElementById('baby-middle') as HTMLInputElement;
+  const guessError = document.getElementById('guess-error') as HTMLParagraphElement;
+  const guessSubmitButton = document.getElementById('guess-submit') as HTMLButtonElement;
+  const guessDoneWrap = document.getElementById('guess-done-wrap') as HTMLDivElement;
+  const guessDone = document.getElementById('guess-done') as HTMLParagraphElement;
+  const guessForgetButton = document.getElementById('guess-forget') as HTMLButtonElement;
+
+  function showGuessDone(guess: GuessInput): void {
+    guessForm.classList.add('hidden');
+    guessDone.textContent = `Your guess: ${guess.first} ${guess.middle}`;
+    guessDoneWrap.classList.remove('hidden');
+  }
+
+  /** Clears the device's remembered Guess and shows the empty form again, e.g. for a shared household device. */
+  function showEmptyForm(): void {
+    forgetGuess(safeLocalStorage());
+    guessDoneWrap.classList.add('hidden');
+    guessForm.reset();
+    guessError.classList.add('hidden');
+    guessSubmitButton.disabled = false;
+    guessForm.classList.remove('hidden');
+    guesserInput.focus();
+  }
+
+  guessForgetButton.addEventListener('click', showEmptyForm);
+
+  interface GuessResponse {
+    guess?: GuessInput;
+    error?: string;
+    issues?: { path: string; message: string }[];
+  }
+
+  /** Prefixes a field-specific validation message with which field it's about. */
+  const GUESS_FIELD_LABEL: Record<string, string> = {
+    first: 'Baby’s first name: ',
+    middle: 'Baby’s middle name: ',
+    guesser: 'Your name: ',
+  };
+
+  async function sendGuess(input: GuessInput): Promise<void> {
+    guessSubmitButton.disabled = true;
+    try {
+      const res = await fetch(guessUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      const data = (await res.json().catch(() => null)) as GuessResponse | null;
+
+      if (res.ok && data?.guess) {
+        rememberGuess(safeLocalStorage(), data.guess);
+        showGuessDone(data.guess);
+        return;
+      }
+
+      if (res.status === 429) {
+        guessError.textContent = 'Too many guesses from this connection. Please wait a few minutes and try again.';
+      } else {
+        const issue = res.status === 400 ? data?.issues?.[0] : undefined;
+        const message = issue?.message ?? data?.error ?? 'Something went wrong. Try again.';
+        const prefix = issue ? GUESS_FIELD_LABEL[issue.path] : undefined;
+        guessError.textContent = prefix ? `${prefix}${message}` : message;
+      }
+      guessError.classList.remove('hidden');
+      guessSubmitButton.disabled = false;
+    } catch {
+      guessError.textContent = 'Something went wrong. Try again.';
+      guessError.classList.remove('hidden');
+      guessSubmitButton.disabled = false;
+    }
+  }
+
+  guessForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    guessError.classList.add('hidden');
+    void sendGuess({
+      guesser: guesserInput.value,
+      first: firstInput.value,
+      middle: middleInput.value,
+    });
+  });
+
+  /** `day` is `YYYY-MM-DD`; parsed as UTC so the calendar date never shifts with the viewer's zone. */
+  function formatDay(day: string): string {
+    const [year, month, date] = day.split('-').map(Number);
+    const utcDate = new Date(Date.UTC(year, month - 1, date));
+    return utcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  function renderGuessing(state: Extract<PublicState, { phase: 'guessing' }>): void {
+    renderHints(document.getElementById('guessing-hints') as HTMLDListElement, state.hints);
+    const count = document.getElementById('guessing-count')!;
+    count.textContent = `${state.count} guessed so far`;
+    const deadline = document.getElementById('guessing-deadline')!;
+    deadline.textContent = `Guess by the end of ${formatDay(state.lastGuessDay)} (Central time).`;
+
+    const remembered = recallGuess(safeLocalStorage());
+    if (remembered) showGuessDone(remembered);
+  }
+
+  // --- Boards and revealed phases ---
+
+  function renderBoardsPhase(state: Extract<PublicState, { phase: 'boards' }>): void {
+    renderHints(document.getElementById('boards-hints') as HTMLDListElement, state.hints);
+
+    // Compare with what this device saw last time, so newly ruled-out blocks tip over on arrival.
+    const storage = safeLocalStorage();
+    const eliminatedNow = (board: BoardId) =>
+      state.boards[board].filter((candidate) => candidate.eliminated).map((candidate) => candidate.name);
+    const current: SeenEliminated = { first: eliminatedNow('first'), middle: eliminatedNow('middle') };
+    const fresh = newlyEliminated(recallSeen(storage), current);
+    rememberSeen(storage, current);
+
+    renderBoards('board', state.boards, {
+      meter: true,
+      newlyOut: { first: new Set(fresh.first), middle: new Set(fresh.middle) },
+    });
+  }
+
+  function renderWinners(winners: string[]): void {
+    const list = document.getElementById('revealed-winners') as HTMLUListElement;
+    const empty = document.getElementById('revealed-no-winners')!;
+    list.textContent = '';
+    empty.classList.toggle('hidden', winners.length > 0);
+    for (const name of winners) {
+      const li = document.createElement('li');
+      li.textContent = name;
+      list.appendChild(li);
+    }
+  }
+
+  function renderPartialWinners(partialWinners: { guesser: string; matched: BoardId }[]): void {
+    const wrap = document.getElementById('revealed-partial-wrap')!;
+    const list = document.getElementById('revealed-partial') as HTMLUListElement;
+    list.textContent = '';
+    wrap.classList.toggle('hidden', partialWinners.length === 0);
+    for (const partial of partialWinners) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = partial.guesser;
+      const matched = document.createElement('span');
+      matched.className = 'text-sm';
+      matched.style.color = 'var(--muted)';
+      matched.textContent = partial.matched === 'first' ? ' (first name)' : ' (middle name)';
+      li.append(name, matched);
+      list.appendChild(li);
+    }
+  }
+
+  function renderGuessesTable(guesses: { guesser: string; first: string; middle: string }[]): void {
+    const tbody = document.getElementById('revealed-guesses') as HTMLTableSectionElement;
+    tbody.textContent = '';
+    for (const guess of guesses) {
+      const tr = document.createElement('tr');
+      for (const value of [guess.guesser, guess.first, guess.middle]) {
+        const td = document.createElement('td');
+        td.className = 'py-1 pr-2';
+        td.textContent = value;
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+  }
+
+  function renderRevealed(state: Extract<PublicState, { phase: 'revealed' }>): void {
+    const heading = document.getElementById('revealed-heading')!;
+    heading.textContent = `It’s ${state.answer.first} ${state.answer.middle}!`;
+    renderWinners(state.winners);
+    renderPartialWinners(state.partialWinners);
+    renderBoards('revealed', state.boards, { meter: false });
+    renderGuessesTable(state.guesses);
+  }
+
+  // --- Entry point ---
+
+  function renderPhase(state: PublicState): void {
+    showSection(state.phase);
+    if (state.phase === 'guessing') renderGuessing(state);
+    else if (state.phase === 'boards') renderBoardsPhase(state);
+    else if (state.phase === 'revealed') renderRevealed(state);
+  }
+
+  async function load(): Promise<void> {
+    showSection('loading');
+    try {
+      const res = await fetch(stateUrl);
+      if (!res.ok) {
+        showSection('error');
+        return;
+      }
+      const state = (await res.json()) as PublicState;
+      renderPhase(state);
+    } catch {
+      showSection('error');
+    }
+  }
+
+  void load();
+</script>

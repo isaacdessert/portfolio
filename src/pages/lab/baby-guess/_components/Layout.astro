@@ -1,0 +1,56 @@
+---
+// Baby Guess's own shell — deliberately not `@lab/LabLayout.astro`: no portfolio nav/footer, no
+// "← lab" link, no " | Isaac Dessert" suffix. See
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §3.
+import ogImage from '../_assets/og.png';
+import '@fontsource/nunito/400.css';
+import '@fontsource/nunito/700.css';
+import './baby.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path within the project (e.g. '/host/'). Defaults to the Guesser page itself. */
+  path?: string;
+}
+
+const ORIGIN = 'https://baby-guess.isaacdessert.dev';
+const { title, description, path = '/' } = Astro.props;
+
+const canonicalURL = new URL(path, ORIGIN).href;
+const ogImageURL = new URL(ogImage.src, ORIGIN).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <link rel="canonical" href={canonicalURL} />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Baby Guess" />
+    <meta property="og:image" content={ogImageURL} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍼</text></svg>"
+    />
+  </head>
+  <body class="min-h-screen">
+    <slot />
+  </body>
+</html>
