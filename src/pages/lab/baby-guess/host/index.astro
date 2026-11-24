@@ -1,9 +1,20 @@
 ---
 // The Host's private page: gated by a token, talks to the Host API, renders Settings, Guesses,
 // Decoys, both Boards, the lock and the Reveal. See
-// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3.
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3 and
+// docs/superpowers/specs/2026-11-19-baby-guess-birth-details-design.md "Builder's calls".
 import { labUrl } from '@lab/url';
 import Layout from '../_components/Layout.astro';
+
+const REVEAL_LB_OPTIONS = Array.from({ length: 21 }, (_, i) => i); // 0–20 lb
+const REVEAL_OZ_OPTIONS = Array.from({ length: 16 }, (_, i) => i); // 0–15 oz
+const REVEAL_LENGTH_OPTIONS = Array.from({ length: 49 }, (_, i) => 8 + i * 0.5); // 8–32 in, by halves
+
+/** A length select option's label, e.g. '20 in' or '20½ in'. Mirrors `_lib/birth.ts`'s `formatBirthValue('length', …)`. */
+function formatLengthOption(inches: number): string {
+  const whole = Math.trunc(inches);
+  return `${whole}${inches % 1 !== 0 ? '½' : ''} in`;
+}
 ---
 
 <Layout
@@ -115,7 +126,8 @@ import Layout from '../_components/Layout.astro';
                   <th scope="col" class="py-1 pr-2">Guesser</th>
                   <th scope="col" class="py-1 pr-2">First</th>
                   <th scope="col" class="py-1 pr-2">Middle</th>
-                  <th scope="col" class="py-1 pr-2">Time</th>
+                  <th scope="col" class="py-1 pr-2">Sent</th>
+                  <th scope="col" class="py-1 pr-2">Birth details</th>
                   <th scope="col" class="py-1"></th>
                 </tr>
               </thead>
@@ -211,6 +223,58 @@ import Layout from '../_components/Layout.astro';
                 style="border-color: var(--gone); background: var(--card)"
               ></select>
             </div>
+            <div class="flex flex-col gap-1">
+              <label for="reveal-birth-date" class="text-sm font-semibold">Birth date</label>
+              <input
+                id="reveal-birth-date"
+                type="date"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="reveal-birth-time" class="text-sm font-semibold">Time of birth</label>
+              <input
+                id="reveal-birth-time"
+                type="time"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-semibold">Weight</span>
+              <div class="flex gap-2">
+                <select
+                  id="reveal-birth-lb"
+                  aria-label="Pounds"
+                  class="rounded-lg border px-3 py-2"
+                  style="border-color: var(--gone); background: var(--card)"
+                >
+                  <option value="">lb</option>
+                  {REVEAL_LB_OPTIONS.map((lb) => <option value={lb}>{lb} lb</option>)}
+                </select>
+                <select
+                  id="reveal-birth-oz"
+                  aria-label="Ounces"
+                  class="rounded-lg border px-3 py-2"
+                  style="border-color: var(--gone); background: var(--card)"
+                >
+                  <option value="">oz</option>
+                  {REVEAL_OZ_OPTIONS.map((oz) => <option value={oz}>{oz} oz</option>)}
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label for="reveal-birth-length" class="text-sm font-semibold">Length</label>
+              <select
+                id="reveal-birth-length"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              >
+                <option value="">in</option>
+                {REVEAL_LENGTH_OPTIONS.map((inches) => <option value={inches}>{formatLengthOption(inches)}</option>)}
+              </select>
+            </div>
             <button
               id="reveal-button"
               type="submit"
@@ -229,6 +293,7 @@ import Layout from '../_components/Layout.astro';
 </Layout>
 
 <script>
+  import { formatBirthDetails, formatBirthValue, type BirthDetails } from '../_lib/birth';
   import type { BoardId } from '../_lib/game';
   import type { HostBoard, HostCandidate, HostState } from '../_lib/project';
 
@@ -285,6 +350,11 @@ import Layout from '../_components/Layout.astro';
   const revealForm = document.getElementById('reveal-form') as HTMLFormElement;
   const revealFirstSelect = document.getElementById('reveal-first-select') as HTMLSelectElement;
   const revealMiddleSelect = document.getElementById('reveal-middle-select') as HTMLSelectElement;
+  const revealBirthDateInput = document.getElementById('reveal-birth-date') as HTMLInputElement;
+  const revealBirthTimeInput = document.getElementById('reveal-birth-time') as HTMLInputElement;
+  const revealBirthLbSelect = document.getElementById('reveal-birth-lb') as HTMLSelectElement;
+  const revealBirthOzSelect = document.getElementById('reveal-birth-oz') as HTMLSelectElement;
+  const revealBirthLengthSelect = document.getElementById('reveal-birth-length') as HTMLSelectElement;
   const revealButton = document.getElementById('reveal-button') as HTMLButtonElement;
   const revealError = document.getElementById('reveal-error') as HTMLParagraphElement;
 
@@ -430,6 +500,11 @@ import Layout from '../_components/Layout.astro';
         td.textContent = value;
         tr.appendChild(td);
       }
+
+      const birthTd = document.createElement('td');
+      birthTd.className = 'py-1 pr-2';
+      birthTd.textContent = guess.birth ? formatBirthDetails(guess.birth) : '—';
+      tr.appendChild(birthTd);
 
       const actionTd = document.createElement('td');
       actionTd.className = 'py-1';
@@ -762,10 +837,10 @@ import Layout from '../_components/Layout.astro';
     }
   }
 
-  async function doReveal(first: string, middle: string): Promise<void> {
+  async function doReveal(first: string, middle: string, birth: BirthDetails): Promise<void> {
     revealButton.disabled = true;
     try {
-      await api(revealUrl, { first, middle });
+      await api(revealUrl, { first, middle, birth });
       revealError.classList.add('hidden');
       await refresh();
     } catch (err) {
@@ -818,11 +893,33 @@ import Layout from '../_components/Layout.astro';
 
   revealForm.addEventListener('submit', (event) => {
     event.preventDefault();
+    revealError.classList.add('hidden');
     const firstOption = revealFirstSelect.selectedOptions[0];
     const middleOption = revealMiddleSelect.selectedOptions[0];
     if (!firstOption || !middleOption) return;
-    if (!confirm(`Reveal ${firstOption.textContent} ${middleOption.textContent}? This ends the game.`)) return;
-    void doReveal(firstOption.value, middleOption.value);
+
+    if (
+      !revealBirthDateInput.value ||
+      !revealBirthTimeInput.value ||
+      !revealBirthLbSelect.value ||
+      !revealBirthOzSelect.value ||
+      !revealBirthLengthSelect.value
+    ) {
+      revealError.textContent = 'Enter all four birth details.';
+      revealError.classList.remove('hidden');
+      return;
+    }
+
+    const birth: BirthDetails = {
+      date: revealBirthDateInput.value,
+      time: revealBirthTimeInput.value,
+      weightOz: Number(revealBirthLbSelect.value) * 16 + Number(revealBirthOzSelect.value),
+      lengthIn: Number(revealBirthLengthSelect.value),
+    };
+
+    const confirmMessage = `Reveal ${firstOption.textContent} ${middleOption.textContent}, born ${formatBirthValue('date', birth)} at ${formatBirthValue('time', birth)}, ${formatBirthValue('weight', birth)}, ${formatBirthValue('length', birth)}? This ends the game.`;
+    if (!confirm(confirmMessage)) return;
+    void doReveal(firstOption.value, middleOption.value, birth);
   });
 
   // --- Entry point ---
