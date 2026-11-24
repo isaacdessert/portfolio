@@ -213,8 +213,11 @@ it('after the Reveal, shows the real Birth Details, each category’s Closest Wi
   });
 
   expect(state.guesses).toHaveLength(8);
+  const alpha = state.guesses.find((g) => g.guesser === 'Guesser Alpha');
+  expect(alpha).toStrictEqual({ guesser: 'Guesser Alpha', first: 'Olivia', middle: 'Rose', birth: ALPHA_BIRTH });
   const hotel = state.guesses.find((g) => g.guesser === 'Guesser Hotel');
   expect(hotel).toEqual({ guesser: 'Guesser Hotel', first: 'Ava', middle: 'Grace' });
+  expect(hotel).not.toHaveProperty('birth');
   for (const winners of Object.values(state.birth.winners)) expect(winners).not.toContain('Guesser Hotel');
 
   const decoyNames = ['Luna', 'Ivy', 'Sage', 'Wren'];
