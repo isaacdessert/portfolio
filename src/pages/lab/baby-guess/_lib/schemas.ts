@@ -2,6 +2,7 @@
 // shapes. See docs/superpowers/specs/2026-11-18-baby-guess-design.md §4.
 
 import { z } from 'astro/zod';
+import { isTime } from './birth';
 import { isDay } from './days';
 import { isGuesserName, isNamePart } from './names';
 
@@ -9,10 +10,18 @@ const namePart = z.string().refine(isNamePart, 'Use letters, spaces, hyphens or 
 const guesserName = z.string().refine(isGuesserName, 'Enter your name (up to 50 characters).');
 const day = z.string().refine(isDay, 'Use YYYY-MM-DD.');
 
+export const birthSchema = z.object({
+  date: day,
+  time: z.string().refine(isTime, 'Pick a time of birth.'),
+  weightOz: z.number().int(),
+  lengthIn: z.number(),
+});
+
 export const guessSchema = z.object({
   guesser: guesserName,
   first: namePart,
   middle: namePart,
+  birth: birthSchema,
 });
 
 export const decoySchema = z.object({
@@ -41,4 +50,5 @@ export const lockSchema = z.object({
 export const revealSchema = z.object({
   first: z.string().min(1),
   middle: z.string().min(1),
+  birth: birthSchema,
 });

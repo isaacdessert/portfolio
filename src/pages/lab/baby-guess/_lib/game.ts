@@ -2,6 +2,7 @@
 // docs/superpowers/specs/2026-11-18-baby-guess-design.md §1.
 
 import { HttpError } from '@lab/api';
+import type { BirthDetails } from './birth';
 import { centralDay, type Day } from './days';
 import { displaySpelling, normalize } from './names';
 import { eliminatedCount, type Anchor } from './pacing';
@@ -9,13 +10,14 @@ import { eliminatedCount, type Anchor } from './pacing';
 export type BoardId = 'first' | 'middle';
 export const BOARDS: readonly BoardId[] = ['first', 'middle'];
 
-/** One Guesser's submission. `id` is `normalize(guesser)`; `at` is an ISO instant. */
+/** One Guesser's submission. `id` is `normalize(guesser)`; `at` is an ISO instant. `birth` is absent on Guesses stored before the Birth Details feature. */
 export interface Guess {
   id: string;
   guesser: string;
   first: string;
   middle: string;
   at: string;
+  birth?: BirthDetails;
 }
 
 /** A Host-added made-up name, counted and shown like a Guess but belonging to no Guesser. */
@@ -38,7 +40,7 @@ export interface Game {
   dueDate: Day;
   hints: Record<BoardId, string>;
   lock?: { day: Day; boards: Record<BoardId, BoardLock> };
-  reveal?: { first: string; middle: string; at: string }; // Candidate keys
+  reveal?: { first: string; middle: string; at: string; birth: BirthDetails }; // first/middle are Candidate keys
 }
 
 export interface GameData {

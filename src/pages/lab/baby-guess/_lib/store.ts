@@ -3,6 +3,7 @@
 
 import { HttpError, readEnv } from '@lab/api';
 import type { LabKv } from '@lab/kv';
+import type { BirthDetails } from './birth';
 import { normalize } from './names';
 import type { Decoy, Game, GameData, Guess } from './game';
 
@@ -11,6 +12,7 @@ export interface NewGuess {
   first: string;
   middle: string;
   at: string;
+  birth: BirthDetails;
 }
 
 export interface NewDecoy {

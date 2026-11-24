@@ -2,6 +2,7 @@
 // API routes call. See docs/superpowers/specs/2026-11-18-baby-guess-design.md §1.
 
 import { HttpError } from '@lab/api';
+import { guessBirthProblem, realBirthProblem, type BirthDetails } from './birth';
 import { centralDay, type Day } from './days';
 import { cleanName, normalize } from './names';
 import { reanchor } from './pacing';
@@ -28,6 +29,14 @@ export interface GuessInput {
   guesser: string;
   first: string;
   middle: string;
+  birth: BirthDetails;
+}
+
+/** What the Host submits to reveal the Answer and the real Birth Details, ending the game. */
+export interface RevealInput {
+  first: string;
+  middle: string;
+  birth: BirthDetails;
 }
 
 export interface ConfigInput {
@@ -54,20 +63,24 @@ function assertNotRevealed(game: Game | null): void {
 export async function submitGuess(deps: ActionDeps, input: GuessInput): Promise<GuessInput> {
   const today = centralDay(deps.now());
   const data = await deps.store.load();
-  const phase = phaseOf(data.game, today);
+  const { game } = data;
 
-  if (phase === 'setup') throw new HttpError(409, "Guessing hasn't opened yet.");
-  if (phase !== 'guessing') throw new HttpError(409, 'Guessing is closed.');
+  if (!game) throw new HttpError(409, "Guessing hasn't opened yet.");
+  if (phaseOf(game, today) !== 'guessing') throw new HttpError(409, 'Guessing is closed.');
+
+  const problem = guessBirthProblem(input.birth, game.dueDate);
+  if (problem) throw new HttpError(400, problem);
 
   const guesser = cleanName(input.guesser);
   const first = cleanName(input.first);
   const middle = cleanName(input.middle);
   const at = deps.now().toISOString();
+  const birth = input.birth;
 
-  const added = await deps.store.addGuess({ guesser, first, middle, at });
+  const added = await deps.store.addGuess({ guesser, first, middle, at, birth });
   if (!added) throw new HttpError(409, `Someone named ${guesser} already guessed. Add your last initial.`);
 
-  return { guesser, first, middle };
+  return { guesser, first, middle, birth };
 }
 
 /** Sets or updates the last guessing day, the Due Date and the Hints; re-anchors a lock when the Due Date moves. */
@@ -168,7 +181,7 @@ export async function lockBoards(deps: ActionDeps, picks: Record<BoardId, string
  * Final Five (the only Candidates that can never be Eliminated); before it, any existing
  * Candidate — see spec §1 "After the lock, that means from the Final Five."
  */
-export async function revealAnswer(deps: ActionDeps, input: Record<BoardId, string>): Promise<void> {
+export async function revealAnswer(deps: ActionDeps, input: RevealInput): Promise<void> {
   const data = await deps.store.load();
   const { game } = data;
   assertNotRevealed(game);
@@ -190,8 +203,11 @@ export async function revealAnswer(deps: ActionDeps, input: Record<BoardId, stri
     answer[board] = key;
   }
 
+  const problem = realBirthProblem(input.birth);
+  if (problem) throw new HttpError(400, problem);
+
   const at = deps.now().toISOString();
-  await deps.store.saveGame({ ...game, reveal: { first: answer.first, middle: answer.middle, at } });
+  await deps.store.saveGame({ ...game, reveal: { first: answer.first, middle: answer.middle, at, birth: input.birth } });
 }
 
 /** The phase-shaped state a Guesser's browser may see. */
