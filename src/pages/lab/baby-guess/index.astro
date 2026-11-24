@@ -865,19 +865,10 @@ function formatLengthOption(inches: number): string {
     // Attached before building children that measure themselves (the real-value label's `getBBox`).
     container.appendChild(svg);
 
-    const line = svgEl('line');
-    line.setAttribute('x1', String(layout.realX));
-    line.setAttribute('x2', String(layout.realX));
-    line.setAttribute('y1', String(CHART_TOP_MARGIN));
-    line.setAttribute('y2', String(baselineY));
-    line.setAttribute('stroke', 'var(--ink)');
-    line.setAttribute('stroke-width', '2');
-    svg.appendChild(line);
-
     const minLabel = svgEl('text');
     minLabel.setAttribute('x', String(CHART_PADDING));
     minLabel.setAttribute('y', String(height - 10));
-    minLabel.setAttribute('fill', 'var(--muted)');
+    minLabel.style.fill = 'var(--muted)';
     minLabel.setAttribute('font-size', '11');
     minLabel.textContent = formatAxisEnd(category, layout.min);
     svg.appendChild(minLabel);
@@ -886,7 +877,7 @@ function formatLengthOption(inches: number): string {
     maxLabel.setAttribute('x', String(width - CHART_PADDING));
     maxLabel.setAttribute('y', String(height - 10));
     maxLabel.setAttribute('text-anchor', 'end');
-    maxLabel.setAttribute('fill', 'var(--muted)');
+    maxLabel.style.fill = 'var(--muted)';
     maxLabel.setAttribute('font-size', '11');
     maxLabel.textContent = formatAxisEnd(category, layout.max);
     svg.appendChild(maxLabel);
@@ -915,12 +906,24 @@ function formatLengthOption(inches: number): string {
       svg.appendChild(hit);
     }
 
-    // Drawn last so it paints above any dot it happens to land near.
+    // Drawn after the dots (not before) so an exact hit — or a whole stack centred on realX —
+    // doesn't paint over the marker; extended a little past the dot band so it stays visible
+    // even then.
+    const line = svgEl('line');
+    line.setAttribute('x1', String(layout.realX));
+    line.setAttribute('x2', String(layout.realX));
+    line.setAttribute('y1', '16');
+    line.setAttribute('y2', String(baselineY + 4));
+    line.style.stroke = 'var(--ink)';
+    line.setAttribute('stroke-width', '2');
+    svg.appendChild(line);
+
+    // Drawn last so it paints above any dot or the marker line it happens to land near.
     const realLabel = svgEl('text');
     realLabel.setAttribute('x', String(layout.realX));
     realLabel.setAttribute('y', '14');
     realLabel.setAttribute('text-anchor', 'middle');
-    realLabel.setAttribute('fill', 'var(--ink)');
+    realLabel.style.fill = 'var(--ink)';
     realLabel.setAttribute('font-size', '11');
     realLabel.setAttribute('font-weight', '700');
     realLabel.textContent = `Born ${formatBirthValue(category, real)}`;
