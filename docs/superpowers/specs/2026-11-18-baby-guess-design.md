@@ -51,6 +51,7 @@ The phase is derived, never stored: `setup → guessing → boards → revealed`
 - **Validation:** each name part is 1–30 characters of letters/marks, spaces, hyphens and
   apostrophes (`/^[\p{L}\p{M}' -]+$/u` after apostrophe normalisation). Guesser name: 1–50
   printable characters.
+- A Guess also includes Birth Details — see 2026-11-19-baby-guess-birth-details-design.md.
 
 ### Boards and Candidates
 
@@ -141,6 +142,8 @@ Reveal it must never contain:
    - Each Candidate is `{ name, eliminated }`, and every Candidate object has exactly the same
      keys, so the shape gives nothing away.
 5. The count, outside the `guessing` phase.
+
+Before the Reveal it must also never contain Birth Details.
 
 Every response is `cache-control: no-store`. The Host token never appears in a page's HTML or JS.
 
