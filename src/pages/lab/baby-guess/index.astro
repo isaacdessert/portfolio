@@ -1,8 +1,19 @@
 ---
 // The Guesser page: fetches the public state once and renders whichever phase it's in. See
-// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3.
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3 and
+// docs/superpowers/specs/2026-11-19-baby-guess-birth-details-design.md "Builder's calls".
 import { labUrl } from '@lab/url';
 import Layout from './_components/Layout.astro';
+
+const BIRTH_LB_OPTIONS = Array.from({ length: 13 }, (_, i) => i + 2); // 2–14 lb
+const BIRTH_OZ_OPTIONS = Array.from({ length: 16 }, (_, i) => i); // 0–15 oz
+const BIRTH_LENGTH_OPTIONS = Array.from({ length: 29 }, (_, i) => 12 + i * 0.5); // 12–26 in, by halves
+
+/** A length select option's label, e.g. '20 in' or '20½ in'. Mirrors `_lib/birth.ts`'s `formatBirthValue('length', …)`. */
+function formatLengthOption(inches: number): string {
+  const whole = Math.trunc(inches);
+  return `${whole}${inches % 1 !== 0 ? '½' : ''} in`;
+}
 ---
 
 <Layout title="Baby Guess" description="Guess the baby’s first and middle name before guessing closes.">
@@ -63,6 +74,78 @@ import Layout from './_components/Layout.astro';
               style="border-color: var(--gone); background: var(--card)"
             />
           </div>
+
+          <fieldset class="rounded-lg border px-3 py-3 space-y-4" style="border-color: var(--gone)">
+            <legend class="text-sm font-semibold">Birth details</legend>
+
+            <div class="flex flex-col gap-1">
+              <label for="birth-date" class="text-sm font-semibold">Birth date</label>
+              <p id="birth-date-help" class="text-sm" style="color: var(--muted)"></p>
+              <input
+                id="birth-date"
+                name="birth-date"
+                type="date"
+                required
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label for="birth-time" class="text-sm font-semibold">Time of birth</label>
+              <input
+                id="birth-time"
+                name="birth-time"
+                type="time"
+                required
+                value="12:00"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-semibold">Weight</span>
+              <div class="flex gap-2">
+                <select
+                  id="birth-lb"
+                  name="birth-lb"
+                  aria-label="Pounds"
+                  class="rounded-lg border px-3 py-2"
+                  style="border-color: var(--gone); background: var(--card)"
+                >
+                  {BIRTH_LB_OPTIONS.map((lb) => (
+                    <option value={lb} selected={lb === 7}>{lb} lb</option>
+                  ))}
+                </select>
+                <select
+                  id="birth-oz"
+                  name="birth-oz"
+                  aria-label="Ounces"
+                  class="rounded-lg border px-3 py-2"
+                  style="border-color: var(--gone); background: var(--card)"
+                >
+                  {BIRTH_OZ_OPTIONS.map((oz) => (
+                    <option value={oz} selected={oz === 8}>{oz} oz</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label for="birth-length" class="text-sm font-semibold">Length</label>
+              <select
+                id="birth-length"
+                name="birth-length"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              >
+                {BIRTH_LENGTH_OPTIONS.map((inches) => (
+                  <option value={inches} selected={inches === 20}>{formatLengthOption(inches)}</option>
+                ))}
+              </select>
+            </div>
+          </fieldset>
 
           <p id="guess-error" class="hidden text-sm" role="alert" style="color: var(--accent-strong)"></p>
 
@@ -207,8 +290,11 @@ import Layout from './_components/Layout.astro';
     recallSeen,
     rememberGuess,
     rememberSeen,
+    type RememberedGuess,
     type SeenEliminated,
   } from './_lib/client';
+  import { DATE_WINDOW_DAYS, formatBirthDetails, formatLongDay } from './_lib/birth';
+  import { addDays } from './_lib/days';
   import type { GuessInput } from './_lib/actions';
   import type { BoardId } from './_lib/game';
   import type { PublicCandidate, PublicState } from './_lib/project';
@@ -465,15 +551,23 @@ import Layout from './_components/Layout.astro';
   const guesserInput = document.getElementById('guesser-input') as HTMLInputElement;
   const firstInput = document.getElementById('baby-first') as HTMLInputElement;
   const middleInput = document.getElementById('baby-middle') as HTMLInputElement;
+  const birthDateInput = document.getElementById('birth-date') as HTMLInputElement;
+  const birthDateHelp = document.getElementById('birth-date-help') as HTMLParagraphElement;
+  const birthTimeInput = document.getElementById('birth-time') as HTMLInputElement;
+  const birthLbSelect = document.getElementById('birth-lb') as HTMLSelectElement;
+  const birthOzSelect = document.getElementById('birth-oz') as HTMLSelectElement;
+  const birthLengthSelect = document.getElementById('birth-length') as HTMLSelectElement;
   const guessError = document.getElementById('guess-error') as HTMLParagraphElement;
   const guessSubmitButton = document.getElementById('guess-submit') as HTMLButtonElement;
   const guessDoneWrap = document.getElementById('guess-done-wrap') as HTMLDivElement;
   const guessDone = document.getElementById('guess-done') as HTMLParagraphElement;
   const guessForgetButton = document.getElementById('guess-forget') as HTMLButtonElement;
 
-  function showGuessDone(guess: GuessInput): void {
+  function showGuessDone(guess: RememberedGuess): void {
     guessForm.classList.add('hidden');
-    guessDone.textContent = `Your guess: ${guess.first} ${guess.middle}`;
+    guessDone.textContent = guess.birth
+      ? `Your guess: ${guess.first} ${guess.middle} · ${formatBirthDetails(guess.birth)}`
+      : `Your guess: ${guess.first} ${guess.middle}`;
     guessDoneWrap.classList.remove('hidden');
   }
 
@@ -501,6 +595,10 @@ import Layout from './_components/Layout.astro';
     first: 'Baby’s first name: ',
     middle: 'Baby’s middle name: ',
     guesser: 'Your name: ',
+    'birth.date': 'Birth date: ',
+    'birth.time': 'Time of birth: ',
+    'birth.weightOz': 'Weight: ',
+    'birth.lengthIn': 'Length: ',
   };
 
   async function sendGuess(input: GuessInput): Promise<void> {
@@ -543,6 +641,12 @@ import Layout from './_components/Layout.astro';
       guesser: guesserInput.value,
       first: firstInput.value,
       middle: middleInput.value,
+      birth: {
+        date: birthDateInput.value,
+        time: birthTimeInput.value,
+        weightOz: Number(birthLbSelect.value) * 16 + Number(birthOzSelect.value),
+        lengthIn: Number(birthLengthSelect.value),
+      },
     });
   });
 
@@ -559,6 +663,14 @@ import Layout from './_components/Layout.astro';
     count.textContent = `${state.count} guessed so far`;
     const deadline = document.getElementById('guessing-deadline')!;
     deadline.textContent = `Guess by the end of ${formatDay(state.lastGuessDay)} (Central time).`;
+
+    birthDateHelp.textContent = `Due ${formatLongDay(state.dueDate)}`;
+    const minDate = addDays(state.dueDate, -DATE_WINDOW_DAYS);
+    const maxDate = addDays(state.dueDate, DATE_WINDOW_DAYS);
+    birthDateInput.min = minDate;
+    birthDateInput.max = maxDate;
+    birthDateInput.value = state.dueDate;
+    birthDateInput.defaultValue = state.dueDate;
 
     const remembered = recallGuess(safeLocalStorage());
     if (remembered) showGuessDone(remembered);

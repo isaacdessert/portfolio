@@ -8,18 +8,40 @@
 // environment and testable without a DOM.
 
 import type { GuessInput } from './actions';
+import type { BirthDetails } from './birth';
 import type { BoardId } from './game';
 
 export const GUESS_KEY = 'baby-guess:guess';
 
-function isGuessInput(value: unknown): value is GuessInput {
+/**
+ * A Guess remembered on this device. One remembered before Birth Details shipped has no `birth`
+ * — don't claim every recalled Guess has one.
+ */
+export type RememberedGuess = Omit<GuessInput, 'birth'> & { birth?: BirthDetails };
+
+function isBirthDetails(value: unknown): value is BirthDetails {
   return (
     typeof value === 'object' &&
     value !== null &&
-    typeof (value as Record<string, unknown>).guesser === 'string' &&
-    typeof (value as Record<string, unknown>).first === 'string' &&
-    typeof (value as Record<string, unknown>).middle === 'string'
+    typeof (value as Record<string, unknown>).date === 'string' &&
+    typeof (value as Record<string, unknown>).time === 'string' &&
+    typeof (value as Record<string, unknown>).weightOz === 'number' &&
+    typeof (value as Record<string, unknown>).lengthIn === 'number'
   );
+}
+
+function isRememberedGuess(value: unknown): value is RememberedGuess {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    typeof (value as Record<string, unknown>).guesser !== 'string' ||
+    typeof (value as Record<string, unknown>).first !== 'string' ||
+    typeof (value as Record<string, unknown>).middle !== 'string'
+  ) {
+    return false;
+  }
+  const birth = (value as Record<string, unknown>).birth;
+  return birth === undefined || isBirthDetails(birth);
 }
 
 /** Remembers `guess` in `storage` for next visit. An optional convenience: never throws. */
@@ -31,13 +53,16 @@ export function rememberGuess(storage: Storage | undefined, guess: GuessInput): 
   }
 }
 
-/** The Guess remembered on this device, or `null` if there is none, storage is blocked, or the data is malformed. */
-export function recallGuess(storage: Storage | undefined): GuessInput | null {
+/**
+ * The Guess remembered on this device, or `null` if there is none, storage is blocked, or the
+ * data is malformed. A Guess remembered before Birth Details shipped comes back with no `birth`.
+ */
+export function recallGuess(storage: Storage | undefined): RememberedGuess | null {
   try {
     const raw = storage?.getItem(GUESS_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    return isGuessInput(parsed) ? parsed : null;
+    return isRememberedGuess(parsed) ? parsed : null;
   } catch {
     return null;
   }
