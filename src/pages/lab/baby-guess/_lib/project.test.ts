@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { BirthDetails } from './birth';
 import { BOARDS, buildLock, type BoardId, type GameData, type Guess } from './game';
 import { addDays, daysBetween, type Day } from './days';
 import { eliminatedCount, reanchor } from './pacing';
@@ -6,23 +7,39 @@ import { hostState, publicState } from './project';
 
 const hints = { first: 'Two syllables', middle: 'A family name' };
 
-function guess(guesser: string, first: string, middle: string, at: string): Guess {
-  return { id: guesser.toLowerCase(), guesser, first, middle, at };
+/** Builds a Guess. `birth` is omitted entirely (never stored as `birth: undefined`) when not given. */
+function guess(guesser: string, first: string, middle: string, at: string, birth?: BirthDetails): Guess {
+  return { id: guesser.toLowerCase(), guesser, first, middle, at, ...(birth && { birth }) };
 }
+
+// Each Guesser's Birth Details is the sole Closest Winner of exactly one category against
+// REAL_BIRTH below: Bravo on date (1 day off), Delta on time (10 min off), Echo on weight (1 oz
+// off), Foxtrot on length (half an inch off). Guesser Hotel has none, to prove old Guesses (stored
+// before this feature) are skipped by `closestWinners` and carry no `birth` key in the projection.
+const ALPHA_BIRTH: BirthDetails = { date: '2027-01-17', time: '09:15', weightOz: 100, lengthIn: 15 };
+const BRAVO_BIRTH: BirthDetails = { date: '2027-01-19', time: '03:00', weightOz: 90, lengthIn: 14 };
+const CHARLIE_BIRTH: BirthDetails = { date: '2027-01-10', time: '06:00', weightOz: 80, lengthIn: 13 };
+const DELTA_BIRTH: BirthDetails = { date: '2027-01-05', time: '11:50', weightOz: 70, lengthIn: 12 };
+const ECHO_BIRTH: BirthDetails = { date: '2027-01-02', time: '20:00', weightOz: 121, lengthIn: 26 };
+const FOXTROT_BIRTH: BirthDetails = { date: '2027-01-25', time: '23:00', weightOz: 60, lengthIn: 20.5 };
+const GOLF_BIRTH: BirthDetails = { date: '2027-01-30', time: '01:00', weightOz: 50, lengthIn: 12.5 };
+
+/** The Reveal's real Birth Details, used by every revealed-game fixture in this file. */
+const REAL_BIRTH: BirthDetails = { date: '2027-01-20', time: '12:00', weightOz: 120, lengthIn: 20 };
 
 /** 8 Guesses (7 distinct names per Board), 2 Decoys, open through 2027-01-05. Answer: Olivia Rose, guessed by Guesser Alpha. */
 function fixture(): GameData {
   return {
     game: { lastGuessDay: '2027-01-05', dueDate: '2027-01-20', hints },
     guesses: [
-      guess('Guesser Alpha', 'Olivia', 'Rose', '2027-01-01T10:00:00Z'),
-      guess('Guesser Bravo', 'Ava', 'Grace', '2027-01-01T11:00:00Z'),
-      guess('Guesser Charlie', 'Mia', 'Jane', '2027-01-01T12:00:00Z'),
-      guess('Guesser Delta', 'Liam', 'Faith', '2027-01-02T09:00:00Z'),
-      guess('Guesser Echo', 'Noah', 'Hope', '2027-01-02T10:00:00Z'),
-      guess('Guesser Foxtrot', 'Ethan', 'Joy', '2027-01-02T11:00:00Z'),
-      guess('Guesser Golf', 'Zoe', 'Belle', '2027-01-03T09:00:00Z'),
-      guess('Guesser Hotel', 'Ava', 'Grace', '2027-01-03T10:00:00Z'),
+      guess('Guesser Alpha', 'Olivia', 'Rose', '2027-01-01T10:00:00Z', ALPHA_BIRTH),
+      guess('Guesser Bravo', 'Ava', 'Grace', '2027-01-01T11:00:00Z', BRAVO_BIRTH),
+      guess('Guesser Charlie', 'Mia', 'Jane', '2027-01-01T12:00:00Z', CHARLIE_BIRTH),
+      guess('Guesser Delta', 'Liam', 'Faith', '2027-01-02T09:00:00Z', DELTA_BIRTH),
+      guess('Guesser Echo', 'Noah', 'Hope', '2027-01-02T10:00:00Z', ECHO_BIRTH),
+      guess('Guesser Foxtrot', 'Ethan', 'Joy', '2027-01-02T11:00:00Z', FOXTROT_BIRTH),
+      guess('Guesser Golf', 'Zoe', 'Belle', '2027-01-03T09:00:00Z', GOLF_BIRTH),
+      guess('Guesser Hotel', 'Ava', 'Grace', '2027-01-03T10:00:00Z'), // no Birth Details
     ],
     decoys: [
       { id: 'd1', first: 'Luna', middle: 'Sage', at: '2027-01-01T08:00:00Z' },
@@ -63,8 +80,21 @@ function expectedEliminated(data: GameData, board: BoardId, day: Day): number {
 it('setup shows nothing', () =>
   expect(publicState({ game: null, guesses: [], decoys: [] }, '2027-01-01')).toEqual({ phase: 'setup' }));
 
-it('guessing shows the Hints and a count that includes Decoys', () =>
-  expect(publicState(fixture(), '2027-01-03')).toEqual({ phase: 'guessing', lastGuessDay: '2027-01-05', hints, count: 10 }));
+it('guessing shows the Due Date, so the form can set its date range', () =>
+  expect(publicState(fixture(), '2027-01-03')).toEqual({
+    phase: 'guessing',
+    lastGuessDay: '2027-01-05',
+    dueDate: '2027-01-20',
+    hints,
+    count: 10,
+  }));
+
+it('carries no Birth Details anywhere before the Reveal', () => {
+  for (const day of ['2027-01-03', '2027-01-12']) {
+    const text = JSON.stringify(publicState(lockedFixture('2027-01-06'), day));
+    for (const word of ['birth', 'weightOz', 'lengthIn', '"time"']) expect(text).not.toContain(word);
+  }
+});
 
 describe('secrecy before the Reveal', () => {
   const data = lockedFixture('2027-01-06');
@@ -139,7 +169,7 @@ it('plays a full timeline', () => {
     }
   }
 
-  game.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-23T15:00:00Z' };
+  game.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-23T15:00:00Z', birth: REAL_BIRTH };
   const revealed = publicState(data, '2027-01-23');
   expect(revealed.phase).toBe('revealed');
   if (revealed.phase !== 'revealed') throw new Error('unreachable');
@@ -160,11 +190,36 @@ it('plays a full timeline', () => {
 
 it('an early Reveal before the lock shows nothing Eliminated', () => {
   const data = fixture();
-  data.game!.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-02T12:00:00Z' };
+  data.game!.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-02T12:00:00Z', birth: REAL_BIRTH };
   const state = publicState(data, '2027-01-02');
   expect(state.phase).toBe('revealed');
   if (state.phase !== 'revealed') throw new Error('unreachable');
   for (const b of BOARDS) for (const c of state.boards[b]) expect(c.eliminated).toBe(false);
+});
+
+it('after the Reveal, shows the real Birth Details, each category’s Closest Winners and everyone’s guesses', () => {
+  const data = fixture();
+  data.game!.reveal = { first: 'olivia', middle: 'rose', at: '2027-01-23T15:00:00Z', birth: REAL_BIRTH };
+  const state = publicState(data, '2027-01-23');
+  expect(state.phase).toBe('revealed');
+  if (state.phase !== 'revealed') throw new Error('unreachable');
+
+  expect(state.birth.real).toEqual(REAL_BIRTH);
+  expect(state.birth.winners).toEqual({
+    date: ['Guesser Bravo'],
+    time: ['Guesser Delta'],
+    weight: ['Guesser Echo'],
+    length: ['Guesser Foxtrot'],
+  });
+
+  expect(state.guesses).toHaveLength(8);
+  const hotel = state.guesses.find((g) => g.guesser === 'Guesser Hotel');
+  expect(hotel).toEqual({ guesser: 'Guesser Hotel', first: 'Ava', middle: 'Grace' });
+  for (const winners of Object.values(state.birth.winners)) expect(winners).not.toContain('Guesser Hotel');
+
+  const decoyNames = ['Luna', 'Ivy', 'Sage', 'Wren'];
+  const text = JSON.stringify(state.birth) + JSON.stringify(state.guesses);
+  for (const name of decoyNames) expect(text).not.toContain(name);
 });
 
 it('moving the Due Date after the lock never lowers the public Eliminated count, and lands on the Final Five (spec §7)', () => {
