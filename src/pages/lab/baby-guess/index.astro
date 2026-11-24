@@ -1,8 +1,19 @@
 ---
 // The Guesser page: fetches the public state once and renders whichever phase it's in. See
-// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3.
+// docs/superpowers/specs/2026-11-18-baby-guess-design.md §1, §3 and
+// docs/superpowers/specs/2026-11-19-baby-guess-birth-details-design.md "Builder's calls".
 import { labUrl } from '@lab/url';
 import Layout from './_components/Layout.astro';
+
+const BIRTH_LB_OPTIONS = Array.from({ length: 13 }, (_, i) => i + 2); // 2–14 lb
+const BIRTH_OZ_OPTIONS = Array.from({ length: 16 }, (_, i) => i); // 0–15 oz
+const BIRTH_LENGTH_OPTIONS = Array.from({ length: 29 }, (_, i) => 12 + i * 0.5); // 12–26 in, by halves
+
+/** A length select option's label, e.g. '20 in' or '20½ in'. Mirrors `_lib/birth.ts`'s `formatBirthValue('length', …)`. */
+function formatLengthOption(inches: number): string {
+  const whole = Math.trunc(inches);
+  return `${whole}${inches % 1 !== 0 ? '½' : ''} in`;
+}
 ---
 
 <Layout title="Baby Guess" description="Guess the baby’s first and middle name before guessing closes.">
@@ -63,6 +74,79 @@ import Layout from './_components/Layout.astro';
               style="border-color: var(--gone); background: var(--card)"
             />
           </div>
+
+          <fieldset class="rounded-lg border px-3 py-3 space-y-4" style="border-color: var(--gone)">
+            <legend class="text-sm font-semibold">Birth details</legend>
+
+            <div class="flex flex-col gap-1">
+              <label for="birth-date" class="text-sm font-semibold">Birth date</label>
+              <p id="birth-date-help" class="text-sm" style="color: var(--muted)"></p>
+              <input
+                id="birth-date"
+                name="birth-date"
+                type="date"
+                required
+                aria-describedby="birth-date-help"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label for="birth-time" class="text-sm font-semibold">Time of birth</label>
+              <input
+                id="birth-time"
+                name="birth-time"
+                type="time"
+                required
+                value="12:00"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <span id="birth-weight-label" class="text-sm font-semibold">Weight</span>
+              <div class="flex gap-2" role="group" aria-labelledby="birth-weight-label">
+                <select
+                  id="birth-lb"
+                  name="birth-lb"
+                  aria-label="Pounds"
+                  class="rounded-lg border px-3 py-2"
+                  style="border-color: var(--gone); background: var(--card)"
+                >
+                  {BIRTH_LB_OPTIONS.map((lb) => (
+                    <option value={lb} selected={lb === 7}>{lb} lb</option>
+                  ))}
+                </select>
+                <select
+                  id="birth-oz"
+                  name="birth-oz"
+                  aria-label="Ounces"
+                  class="rounded-lg border px-3 py-2"
+                  style="border-color: var(--gone); background: var(--card)"
+                >
+                  {BIRTH_OZ_OPTIONS.map((oz) => (
+                    <option value={oz} selected={oz === 8}>{oz} oz</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label for="birth-length" class="text-sm font-semibold">Length</label>
+              <select
+                id="birth-length"
+                name="birth-length"
+                class="rounded-lg border px-3 py-2"
+                style="border-color: var(--gone); background: var(--card)"
+              >
+                {BIRTH_LENGTH_OPTIONS.map((inches) => (
+                  <option value={inches} selected={inches === 20}>{formatLengthOption(inches)}</option>
+                ))}
+              </select>
+            </div>
+          </fieldset>
 
           <p id="guess-error" class="hidden text-sm" role="alert" style="color: var(--accent-strong)"></p>
 
@@ -141,6 +225,12 @@ import Layout from './_components/Layout.astro';
         </div>
 
         <div class="mt-6">
+          <h2 class="font-bold">Birth details</h2>
+          <p id="revealed-birth-real" class="mt-1"></p>
+          <div id="revealed-birth-categories" class="mt-4 space-y-6"></div>
+        </div>
+
+        <div class="mt-6">
           <div
             id="revealed-tabs"
             role="tablist"
@@ -184,8 +274,11 @@ import Layout from './_components/Layout.astro';
               <thead>
                 <tr>
                   <th scope="col" class="py-1 pr-2">Guesser</th>
-                  <th scope="col" class="py-1 pr-2">First</th>
-                  <th scope="col" class="py-1">Middle</th>
+                  <th scope="col" class="py-1 pr-2">Name</th>
+                  <th scope="col" class="py-1 pr-2">Date</th>
+                  <th scope="col" class="py-1 pr-2">Time</th>
+                  <th scope="col" class="py-1 pr-2">Weight</th>
+                  <th scope="col" class="py-1">Length</th>
                 </tr>
               </thead>
               <tbody id="revealed-guesses"></tbody>
@@ -207,8 +300,21 @@ import Layout from './_components/Layout.astro';
     recallSeen,
     rememberGuess,
     rememberSeen,
+    type RememberedGuess,
     type SeenEliminated,
   } from './_lib/client';
+  import {
+    BIRTH_CATEGORIES,
+    birthValue,
+    DATE_WINDOW_DAYS,
+    formatBirthDetails,
+    formatBirthValue,
+    formatLongDay,
+    type BirthCategory,
+    type BirthDetails,
+  } from './_lib/birth';
+  import { addDays } from './_lib/days';
+  import { stripLayout } from './_lib/strip';
   import type { GuessInput } from './_lib/actions';
   import type { BoardId } from './_lib/game';
   import type { PublicCandidate, PublicState } from './_lib/project';
@@ -465,15 +571,23 @@ import Layout from './_components/Layout.astro';
   const guesserInput = document.getElementById('guesser-input') as HTMLInputElement;
   const firstInput = document.getElementById('baby-first') as HTMLInputElement;
   const middleInput = document.getElementById('baby-middle') as HTMLInputElement;
+  const birthDateInput = document.getElementById('birth-date') as HTMLInputElement;
+  const birthDateHelp = document.getElementById('birth-date-help') as HTMLParagraphElement;
+  const birthTimeInput = document.getElementById('birth-time') as HTMLInputElement;
+  const birthLbSelect = document.getElementById('birth-lb') as HTMLSelectElement;
+  const birthOzSelect = document.getElementById('birth-oz') as HTMLSelectElement;
+  const birthLengthSelect = document.getElementById('birth-length') as HTMLSelectElement;
   const guessError = document.getElementById('guess-error') as HTMLParagraphElement;
   const guessSubmitButton = document.getElementById('guess-submit') as HTMLButtonElement;
   const guessDoneWrap = document.getElementById('guess-done-wrap') as HTMLDivElement;
   const guessDone = document.getElementById('guess-done') as HTMLParagraphElement;
   const guessForgetButton = document.getElementById('guess-forget') as HTMLButtonElement;
 
-  function showGuessDone(guess: GuessInput): void {
+  function showGuessDone(guess: RememberedGuess): void {
     guessForm.classList.add('hidden');
-    guessDone.textContent = `Your guess: ${guess.first} ${guess.middle}`;
+    guessDone.textContent = guess.birth
+      ? `Your guess: ${guess.first} ${guess.middle} · ${formatBirthDetails(guess.birth)}`
+      : `Your guess: ${guess.first} ${guess.middle}`;
     guessDoneWrap.classList.remove('hidden');
   }
 
@@ -501,6 +615,10 @@ import Layout from './_components/Layout.astro';
     first: 'Baby’s first name: ',
     middle: 'Baby’s middle name: ',
     guesser: 'Your name: ',
+    'birth.date': 'Birth date: ',
+    'birth.time': 'Time of birth: ',
+    'birth.weightOz': 'Weight: ',
+    'birth.lengthIn': 'Length: ',
   };
 
   async function sendGuess(input: GuessInput): Promise<void> {
@@ -543,6 +661,12 @@ import Layout from './_components/Layout.astro';
       guesser: guesserInput.value,
       first: firstInput.value,
       middle: middleInput.value,
+      birth: {
+        date: birthDateInput.value,
+        time: birthTimeInput.value,
+        weightOz: Number(birthLbSelect.value) * 16 + Number(birthOzSelect.value),
+        lengthIn: Number(birthLengthSelect.value),
+      },
     });
   });
 
@@ -559,6 +683,14 @@ import Layout from './_components/Layout.astro';
     count.textContent = `${state.count} guessed so far`;
     const deadline = document.getElementById('guessing-deadline')!;
     deadline.textContent = `Guess by the end of ${formatDay(state.lastGuessDay)} (Central time).`;
+
+    birthDateHelp.textContent = `Due ${formatLongDay(state.dueDate)}`;
+    const minDate = addDays(state.dueDate, -DATE_WINDOW_DAYS);
+    const maxDate = addDays(state.dueDate, DATE_WINDOW_DAYS);
+    birthDateInput.min = minDate;
+    birthDateInput.max = maxDate;
+    birthDateInput.value = state.dueDate;
+    birthDateInput.defaultValue = state.dueDate;
 
     const remembered = recallGuess(safeLocalStorage());
     if (remembered) showGuessDone(remembered);
@@ -613,14 +745,25 @@ import Layout from './_components/Layout.astro';
     }
   }
 
-  function renderGuessesTable(guesses: { guesser: string; first: string; middle: string }[]): void {
+  function renderGuessesTable(
+    guesses: { guesser: string; first: string; middle: string; birth?: BirthDetails }[],
+  ): void {
     const tbody = document.getElementById('revealed-guesses') as HTMLTableSectionElement;
     tbody.textContent = '';
     for (const guess of guesses) {
       const tr = document.createElement('tr');
-      for (const value of [guess.guesser, guess.first, guess.middle]) {
+      // Date and Time get `whitespace-nowrap` so a narrow phone screen can't wrap them mid-value.
+      const cells: [string, string][] = [
+        [guess.guesser, 'py-1 pr-2'],
+        [`${guess.first} ${guess.middle}`, 'py-1 pr-2'],
+        [guess.birth ? formatBirthValue('date', guess.birth) : '—', 'py-1 pr-2 whitespace-nowrap'],
+        [guess.birth ? formatBirthValue('time', guess.birth) : '—', 'py-1 pr-2 whitespace-nowrap'],
+        [guess.birth ? formatBirthValue('weight', guess.birth) : '—', 'py-1 pr-2'],
+        [guess.birth ? formatBirthValue('length', guess.birth) : '—', 'py-1'],
+      ];
+      for (const [value, className] of cells) {
         const td = document.createElement('td');
-        td.className = 'py-1 pr-2';
+        td.className = className;
         td.textContent = value;
         tr.appendChild(td);
       }
@@ -628,11 +771,229 @@ import Layout from './_components/Layout.astro';
     }
   }
 
+  // --- Birth details results: Closest Winners, a strip chart per category ---
+  // See docs/superpowers/specs/2026-11-19-baby-guess-birth-details-design.md "Charts". Built
+  // entirely with `createElementNS`/`textContent` — never `innerHTML` — so a Guesser's own name
+  // can't inject markup.
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const CHART_FALLBACK_WIDTH = 340;
+  const CHART_PADDING = 12;
+  const CHART_TOP_MARGIN = 20; // reserved for the real-value label above the marker line
+  const CHART_BOTTOM_MARGIN = 30; // reserved for the axis end labels
+  const CHART_LEVEL_HEIGHT = 10;
+  const CHART_DOT_RADIUS = 4;
+  const CHART_HIT_RADIUS = 10;
+  const CHART_DOT_FILL = '#b5533a';
+  const CHART_DOT_RING = '#fff8f0';
+
+  const BIRTH_CATEGORY_TITLE: Record<BirthCategory, string> = {
+    date: 'Closest birth date',
+    time: 'Closest time of birth',
+    weight: 'Closest weight',
+    length: 'Closest length',
+  };
+
+  function svgEl<K extends keyof SVGElementTagNameMap>(tag: K): SVGElementTagNameMap[K] {
+    return document.createElementNS(SVG_NS, tag) as SVGElementTagNameMap[K];
+  }
+
+  /** A throwaway `BirthDetails` carrying only `category`'s field, so a raw axis value (not tied to
+   *  any real Guess or the real birth) can still go through `formatBirthValue`. */
+  function axisBirth(category: BirthCategory, value: number): BirthDetails {
+    const base: BirthDetails = { date: '1970-01-01', time: '00:00', weightOz: 0, lengthIn: 0 };
+    if (category === 'date') return { ...base, date: addDays('1970-01-01', value) };
+    if (category === 'weight') return { ...base, weightOz: value };
+    if (category === 'length') return { ...base, lengthIn: value };
+    return base;
+  }
+
+  /** The time axis's end labels read "12 am" (no minutes) — the usual `formatBirthValue('time', …)`
+   *  would print "12:00 am", too fussy for a compact chart's edge. */
+  function formatTimeAxisEnd(value: number): string {
+    const minutes = ((value % 1440) + 1440) % 1440;
+    const hour24 = Math.floor(minutes / 60);
+    const hour12 = hour24 % 12 || 12;
+    return `${hour12} ${hour24 < 12 ? 'am' : 'pm'}`;
+  }
+
+  function formatAxisEnd(category: BirthCategory, value: number): string {
+    return category === 'time' ? formatTimeAxisEnd(value) : formatBirthValue(category, axisBirth(category, value));
+  }
+
+  /** Nudges a centered label's `x` so its rendered box stays inside `[0, width]`. Measured with
+   *  `getBBox`, which needs the text node already attached to the visible document. */
+  function clampLabelX(text: SVGTextElement, width: number): void {
+    try {
+      const box = text.getBBox();
+      if (box.width === 0) return;
+      const margin = 2;
+      let x = Number(text.getAttribute('x'));
+      if (box.x < margin) x += margin - box.x;
+      else if (box.x + box.width > width - margin) x -= box.x + box.width - (width - margin);
+      text.setAttribute('x', String(x));
+    } catch {
+      // getBBox can throw if the SVG isn't actually laid out (e.g. a hidden ancestor); leave it centered.
+    }
+  }
+
+  /** Renders one category's strip chart into `container`, sized to its current `clientWidth`
+   *  (the container must already be visible — see `renderBirthDetails`). */
+  function renderBirthChart(
+    container: HTMLDivElement,
+    category: BirthCategory,
+    guesses: readonly { guesser: string; birth: BirthDetails }[],
+    real: BirthDetails,
+  ): void {
+    container.textContent = '';
+    const width = container.clientWidth || CHART_FALLBACK_WIDTH;
+
+    const points = guesses.map((g) => ({ label: g.guesser, value: birthValue(category, g.birth) }));
+    const realValue = birthValue(category, real);
+    const domain: [number, number] | undefined = category === 'time' ? [0, 1440] : undefined;
+    const layout = stripLayout(points, realValue, { width, padding: CHART_PADDING, domain });
+
+    const baselineY = CHART_TOP_MARGIN + layout.levels * CHART_LEVEL_HEIGHT;
+    const height = baselineY + CHART_BOTTOM_MARGIN;
+
+    const svg = svgEl('svg');
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('width', String(width));
+    svg.setAttribute('height', String(height));
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('class', 'birth-chart');
+    // Attached before building children that measure themselves (the real-value label's `getBBox`).
+    container.appendChild(svg);
+
+    const minLabel = svgEl('text');
+    minLabel.setAttribute('x', String(CHART_PADDING));
+    minLabel.setAttribute('y', String(height - 10));
+    minLabel.style.fill = 'var(--muted)';
+    minLabel.setAttribute('font-size', '11');
+    minLabel.textContent = formatAxisEnd(category, layout.min);
+    svg.appendChild(minLabel);
+
+    const maxLabel = svgEl('text');
+    maxLabel.setAttribute('x', String(width - CHART_PADDING));
+    maxLabel.setAttribute('y', String(height - 10));
+    maxLabel.setAttribute('text-anchor', 'end');
+    maxLabel.style.fill = 'var(--muted)';
+    maxLabel.setAttribute('font-size', '11');
+    maxLabel.textContent = formatAxisEnd(category, layout.max);
+    svg.appendChild(maxLabel);
+
+    for (const dot of layout.dots) {
+      const y = baselineY - dot.level * CHART_LEVEL_HEIGHT - CHART_LEVEL_HEIGHT / 2;
+      const guess = guesses.find((g) => g.guesser === dot.label);
+
+      const circle = svgEl('circle');
+      circle.setAttribute('cx', String(dot.x));
+      circle.setAttribute('cy', String(y));
+      circle.setAttribute('r', String(CHART_DOT_RADIUS));
+      circle.setAttribute('fill', CHART_DOT_FILL);
+      circle.setAttribute('stroke', CHART_DOT_RING);
+      circle.setAttribute('stroke-width', '2');
+      svg.appendChild(circle);
+
+      const hit = svgEl('circle');
+      hit.setAttribute('cx', String(dot.x));
+      hit.setAttribute('cy', String(y));
+      hit.setAttribute('r', String(CHART_HIT_RADIUS));
+      hit.setAttribute('fill', 'transparent');
+      const title = svgEl('title');
+      title.textContent = guess ? `${dot.label} · ${formatBirthValue(category, guess.birth)}` : dot.label;
+      hit.appendChild(title);
+      svg.appendChild(hit);
+    }
+
+    // Drawn after the dots (not before) so an exact hit — or a whole stack centred on realX —
+    // doesn't paint over the marker; extended a little past the dot band so it stays visible
+    // even then.
+    const line = svgEl('line');
+    line.setAttribute('x1', String(layout.realX));
+    line.setAttribute('x2', String(layout.realX));
+    line.setAttribute('y1', '16');
+    line.setAttribute('y2', String(baselineY + 4));
+    line.style.stroke = 'var(--ink)';
+    line.setAttribute('stroke-width', '2');
+    svg.appendChild(line);
+
+    // Drawn last so it paints above any dot or the marker line it happens to land near.
+    const realLabel = svgEl('text');
+    realLabel.setAttribute('x', String(layout.realX));
+    realLabel.setAttribute('y', '14');
+    realLabel.setAttribute('text-anchor', 'middle');
+    realLabel.style.fill = 'var(--ink)';
+    realLabel.setAttribute('font-size', '11');
+    realLabel.setAttribute('font-weight', '700');
+    realLabel.textContent = `Born ${formatBirthValue(category, real)}`;
+    svg.appendChild(realLabel);
+    clampLabelX(realLabel, width);
+  }
+
+  function renderBirthWinnersLine(
+    el: HTMLParagraphElement,
+    category: BirthCategory,
+    winners: readonly string[],
+    guesses: readonly { guesser: string; birth?: BirthDetails }[],
+  ): void {
+    if (winners.length === 0) {
+      el.textContent = 'Nobody guessed the birth details.';
+      return;
+    }
+    el.textContent = winners
+      .map((name) => {
+        const birth = guesses.find((g) => g.guesser === name)?.birth;
+        return birth ? `${name} (${formatBirthValue(category, birth)})` : name;
+      })
+      .join(', ');
+  }
+
+  /**
+   * Renders the "Birth details" results: the real values, then one block per category (title,
+   * Closest Winners line, strip chart). The chart containers are created and attached to the
+   * document in one pass, then measured and filled in a second pass, so each `clientWidth` read
+   * reflects real layout rather than an unattached node's 0.
+   */
+  function renderBirthDetails(state: Extract<PublicState, { phase: 'revealed' }>): void {
+    const real = document.getElementById('revealed-birth-real')!;
+    real.textContent = `Born ${formatBirthDetails(state.birth.real)}`;
+
+    const container = document.getElementById('revealed-birth-categories') as HTMLDivElement;
+    container.textContent = '';
+
+    const chartWraps = {} as Record<BirthCategory, HTMLDivElement>;
+    for (const category of BIRTH_CATEGORIES) {
+      const block = document.createElement('div');
+
+      const title = document.createElement('h3');
+      title.className = 'font-semibold';
+      title.textContent = BIRTH_CATEGORY_TITLE[category];
+
+      const winnersLine = document.createElement('p');
+      winnersLine.className = 'mt-1 text-sm';
+      renderBirthWinnersLine(winnersLine, category, state.birth.winners[category], state.guesses);
+
+      const chartWrap = document.createElement('div');
+      chartWrap.className = 'mt-2';
+
+      block.append(title, winnersLine, chartWrap);
+      container.appendChild(block);
+      chartWraps[category] = chartWrap;
+    }
+
+    const withBirth = state.guesses.filter(
+      (g): g is { guesser: string; first: string; middle: string; birth: BirthDetails } => !!g.birth,
+    );
+    for (const category of BIRTH_CATEGORIES) renderBirthChart(chartWraps[category], category, withBirth, state.birth.real);
+  }
+
   function renderRevealed(state: Extract<PublicState, { phase: 'revealed' }>): void {
     const heading = document.getElementById('revealed-heading')!;
     heading.textContent = `It’s ${state.answer.first} ${state.answer.middle}!`;
     renderWinners(state.winners);
     renderPartialWinners(state.partialWinners);
+    renderBirthDetails(state);
     renderBoards('revealed', state.boards, { meter: false });
     renderGuessesTable(state.guesses);
   }

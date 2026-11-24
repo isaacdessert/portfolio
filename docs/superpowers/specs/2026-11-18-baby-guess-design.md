@@ -51,6 +51,7 @@ The phase is derived, never stored: `setup → guessing → boards → revealed`
 - **Validation:** each name part is 1–30 characters of letters/marks, spaces, hyphens and
   apostrophes (`/^[\p{L}\p{M}' -]+$/u` after apostrophe normalisation). Guesser name: 1–50
   printable characters.
+- A Guess also includes Birth Details — see 2026-11-19-baby-guess-birth-details-design.md.
 
 ### Boards and Candidates
 
@@ -142,6 +143,8 @@ Reveal it must never contain:
      keys, so the shape gives nothing away.
 5. The count, outside the `guessing` phase.
 
+Before the Reveal it must also never contain Birth Details.
+
 Every response is `cache-control: no-store`. The Host token never appears in a page's HTML or JS.
 
 ## 3. Pages and look
@@ -187,13 +190,13 @@ All endpoints: `prerender = false`, wrapped in `handler()`, JSON bodies validate
 | Endpoint | Auth | Rate limit (per IP) | Does |
 |---|---|---|---|
 | `GET api/state` | — | 60 / 1 m | public, phase-shaped state (sections 1–2) |
-| `POST api/guess` | — | 20 / 10 m (households share an IP) | add a Guess; 409 taken name, 409 guessing closed |
+| `POST api/guess` | — | 20 / 10 m (households share an IP) | add a Guess, `{ guesser, first, middle, birth }` (`birth`'s shape: 2026-11-19-baby-guess-birth-details-design.md); 409 taken name, 409 guessing closed |
 | `GET api/host/state` | Host | 30 / 1 m | everything, including counts, Decoys, order and schedule |
 | `POST api/host/config` | Host | 30 / 1 m | last guessing day, Due Date, Hints; a Due Date change after the lock re-anchors |
 | `POST api/host/decoy` | Host | 30 / 1 m | add a Decoy (before the lock) |
 | `POST api/host/remove` | Host | 30 / 1 m | `{ kind: 'guess' \| 'decoy', id }` (before the lock) |
 | `POST api/host/lock` | Host | 30 / 1 m | `{ first: [5], middle: [5] }`, once, after the Deadline |
-| `POST api/host/reveal` | Host | 30 / 1 m | `{ first, middle }`, from non-Eliminated Candidates |
+| `POST api/host/reveal` | Host | 30 / 1 m | `{ first, middle, birth }` (`birth`'s shape: 2026-11-19-baby-guess-birth-details-design.md), `first`/`middle` from non-Eliminated Candidates |
 
 - **Host auth:** `requireEnv('BABY_GUESS_HOST_TOKEN')`, compared with `crypto.timingSafeEqual` over
   SHA-256 digests. A mismatch returns 401. The rate limit runs first, so guessing the token is
@@ -214,9 +217,9 @@ into the real game.
 
 | Key | Type | Holds |
 |---|---|---|
-| `guesses` | hash | field = normalised Guesser name → `{ guesser, first, middle, at }`. `hsetnx` makes one-per-name atomic under simultaneous submits |
+| `guesses` | hash | field = normalised Guesser name → `{ guesser, first, middle, at, birth }` (`birth`'s shape: 2026-11-19-baby-guess-birth-details-design.md). `hsetnx` makes one-per-name atomic under simultaneous submits |
 | `decoys` | hash | field = random id → `{ first, middle, at }` |
-| `game` | JSON | `{ lastGuessDay, dueDate, hints: { first, middle }, lock?: { day, boards: { first, middle: { finalFive, order, anchor } } }, reveal?: { first, middle, at } }`. Only the Host writes it |
+| `game` | JSON | `{ lastGuessDay, dueDate, hints: { first, middle }, lock?: { day, boards: { first, middle: { finalFive, order, anchor } } }, reveal?: { first, middle, at, birth } }` (`reveal.birth`'s shape: 2026-11-19-baby-guess-birth-details-design.md). Only the Host writes it |
 
 **Budget:** a public state read is about 3–4 commands (rate limit, `hgetall` ×2, `get`). Even 50
 Guessers × 5 views a day × 60 days is roughly 60K commands, well inside Upstash Free's

@@ -183,3 +183,13 @@ body {
     animation: none !important;
   }
 }
+
+/* --- Birth details results: one strip chart per category -----------------------------------
+   Plain SVG built from DOM nodes (see index.astro's renderBirthChart). `display: block` just
+   drops the few px of inline-element whitespace a bare <svg> otherwise leaves beneath it. */
+
+.birth-chart {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

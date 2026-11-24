@@ -1,6 +1,7 @@
 // Public and Host projections of game data — the secrecy rules. See
 // docs/superpowers/specs/2026-11-18-baby-guess-design.md §1-2.
 
+import { closestWinners, type BirthCategory, type BirthDetails } from './birth';
 import { type Day } from './days';
 import { displaySpelling } from './names';
 import { upcoming } from './pacing';
@@ -27,7 +28,7 @@ export interface PublicCandidate {
 
 export type PublicState =
   | { phase: 'setup' }
-  | { phase: 'guessing'; lastGuessDay: Day; hints: Record<BoardId, string>; count: number }
+  | { phase: 'guessing'; lastGuessDay: Day; dueDate: Day; hints: Record<BoardId, string>; count: number }
   | { phase: 'boards'; hints: Record<BoardId, string>; boards: Record<BoardId, PublicCandidate[]> }
   | {
       phase: 'revealed';
@@ -36,7 +37,8 @@ export type PublicState =
       answer: Record<BoardId, string>;
       winners: string[];
       partialWinners: { guesser: string; matched: BoardId }[];
-      guesses: { guesser: string; first: string; middle: string }[];
+      guesses: { guesser: string; first: string; middle: string; birth?: BirthDetails }[];
+      birth: { real: BirthDetails; winners: Record<BirthCategory, string[]> };
     };
 
 /** Every Candidate on `board`, with its Eliminated flag as of `today`. Never counts, Guessers or Decoys. */
@@ -63,8 +65,8 @@ function revealedBoard(
 
 /**
  * The phase-shaped projection of `data` a Guesser's browser may see. Before the Reveal this never
- * includes counts, Guesser names, Decoy flags, Final Five membership or the Elimination order — see
- * the spec's secrecy rules.
+ * includes counts, Guesser names, Decoy flags, Final Five membership, the Elimination order or
+ * anyone's Birth Details (Guessed or real) — see the spec's secrecy rules.
  */
 export function publicState(data: GameData, today: Day): PublicState {
   const { game } = data;
@@ -82,13 +84,25 @@ export function publicState(data: GameData, today: Day): PublicState {
     const { winners, partialWinners } = results(data.guesses, { first: reveal.first, middle: reveal.middle });
     const guesses = [...data.guesses]
       .sort((a, b) => a.guesser.localeCompare(b.guesser))
-      .map((g) => ({ guesser: g.guesser, first: displaySpelling(g.first), middle: displaySpelling(g.middle) }));
-    return { phase: 'revealed', hints: game.hints, boards, answer, winners, partialWinners, guesses };
+      .map((g) => ({
+        guesser: g.guesser,
+        first: displaySpelling(g.first),
+        middle: displaySpelling(g.middle),
+        ...(g.birth && { birth: g.birth }),
+      }));
+    const birth = { real: reveal.birth, winners: closestWinners(data.guesses, reveal.birth) };
+    return { phase: 'revealed', hints: game.hints, boards, answer, winners, partialWinners, guesses, birth };
   }
 
   const phase = phaseOf(game, today);
   if (phase === 'guessing') {
-    return { phase, lastGuessDay: game.lastGuessDay, hints: game.hints, count: data.guesses.length + data.decoys.length };
+    return {
+      phase,
+      lastGuessDay: game.lastGuessDay,
+      dueDate: game.dueDate,
+      hints: game.hints,
+      count: data.guesses.length + data.decoys.length,
+    };
   }
 
   const boards = {} as Record<BoardId, PublicCandidate[]>;

@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { GuessInput } from './actions';
+import type { BirthDetails } from './birth';
 import {
   blockLetter,
   boardFromHash,
@@ -52,12 +53,45 @@ const throwing = {
   },
 } as unknown as Storage;
 
+const SAMPLE_BIRTH: BirthDetails = { date: '2027-04-05', time: '15:20', weightOz: 120, lengthIn: 20 };
+
 describe('rememberGuess / recallGuess', () => {
   it('round-trips a Guess', () => {
     const storage = memoryStorage();
-    const guess: GuessInput = { guesser: 'Aunt May', first: 'Ava', middle: 'Rose' };
+    const guess: GuessInput = { guesser: 'Aunt May', first: 'Ava', middle: 'Rose', birth: SAMPLE_BIRTH };
     rememberGuess(storage, guess);
     expect(recallGuess(storage)).toEqual(guess);
+  });
+
+  it('round-trips a remembered Guess with Birth Details', () => {
+    const storage = memoryStorage();
+    const guess: GuessInput = {
+      guesser: 'Uncle Rob',
+      first: 'Leo',
+      middle: 'James',
+      birth: { date: '2027-03-20', time: '08:45', weightOz: 112, lengthIn: 19.5 },
+    };
+    rememberGuess(storage, guess);
+    expect(recallGuess(storage)).toEqual(guess);
+  });
+
+  it('still recalls a Guess remembered before Birth Details', () => {
+    const storage = memoryStorage({
+      [GUESS_KEY]: JSON.stringify({ guesser: 'Aunt May', first: 'Ava', middle: 'Rose' }),
+    });
+    expect(recallGuess(storage)).toEqual({ guesser: 'Aunt May', first: 'Ava', middle: 'Rose' });
+  });
+
+  it('rejects a remembered Guess with a malformed birth', () => {
+    const storage = memoryStorage({
+      [GUESS_KEY]: JSON.stringify({
+        guesser: 'Aunt May',
+        first: 'Ava',
+        middle: 'Rose',
+        birth: { date: '2027-04-05', time: '15:20', weightOz: '120', lengthIn: 20 },
+      }),
+    });
+    expect(recallGuess(storage)).toBeNull();
   });
 
   it('returns null with no storage, blocked storage or junk', () => {
@@ -67,13 +101,15 @@ describe('rememberGuess / recallGuess', () => {
   });
 
   it('never throws when storage is blocked', () =>
-    expect(() => rememberGuess(throwing, { guesser: 'A', first: 'Ava', middle: 'Rose' })).not.toThrow());
+    expect(() =>
+      rememberGuess(throwing, { guesser: 'A', first: 'Ava', middle: 'Rose', birth: SAMPLE_BIRTH }),
+    ).not.toThrow());
 });
 
 describe('forgetGuess', () => {
   it('removes the remembered Guess', () => {
     const storage = memoryStorage();
-    rememberGuess(storage, { guesser: 'A', first: 'Ava', middle: 'Rose' });
+    rememberGuess(storage, { guesser: 'A', first: 'Ava', middle: 'Rose', birth: SAMPLE_BIRTH });
     forgetGuess(storage);
     expect(recallGuess(storage)).toBeNull();
   });

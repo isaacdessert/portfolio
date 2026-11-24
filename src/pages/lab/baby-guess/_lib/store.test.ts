@@ -27,6 +27,13 @@ it('refuses a second Guess under the same name, however it is typed, even at the
   expect((await store.load()).guesses).toHaveLength(1);
 });
 
+it('keeps a Guess’s Birth Details', async () => {
+  const store = createGameStore(fakeHashKv(), 'preview');
+  const birth = { date: '2027-01-20', time: '12:00', weightOz: 120, lengthIn: 20 };
+  await store.addGuess({ guesser: 'Mom', first: 'Ava', middle: 'Rose', at: 't', birth });
+  expect((await store.load()).guesses[0].birth).toEqual(birth);
+});
+
 it('gives each Decoy its own id and removes by id', async () => {
   let n = 0;
   const newId = () => `d${++n}`;

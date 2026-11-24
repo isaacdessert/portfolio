@@ -3,6 +3,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeHashKv } from './__fixtures__/fakeKv';
+import type { BirthDetails } from './birth';
 import { createGameStore } from './store';
 import type { BoardId, Game } from './game';
 import {
@@ -43,19 +44,23 @@ async function withBaseGame(target: ActionDeps): Promise<void> {
   await target.store.saveGame({ ...baseGame });
 }
 
-const mom: GuessInput = { guesser: 'Mom', first: 'Olivia', middle: 'Rose' };
-const dad: GuessInput = { guesser: 'Dad', first: 'Ava', middle: 'Grace' };
+// Matches baseGame's dueDate (2027-01-20), so it's inside the guessed-birth window by default.
+const BIRTH: BirthDetails = { date: '2027-01-20', time: '12:00', weightOz: 120, lengthIn: 20 };
+const REAL: BirthDetails = { date: '2027-01-10', time: '09:30', weightOz: 112, lengthIn: 19.5 };
+
+const mom: GuessInput = { guesser: 'Mom', first: 'Olivia', middle: 'Rose', birth: BIRTH };
+const dad: GuessInput = { guesser: 'Dad', first: 'Ava', middle: 'Grace', birth: BIRTH };
 
 // 7 distinct first names and 7 distinct middle names, one of each per Guesser — enough to lock a
 // Final Five of 5 per Board with 2 left over for the Elimination order.
 const SEED_GUESSES: GuessInput[] = [
-  { guesser: 'G1', first: 'Olivia', middle: 'Rose' },
-  { guesser: 'G2', first: 'Ava', middle: 'Grace' },
-  { guesser: 'G3', first: 'Mia', middle: 'Jane' },
-  { guesser: 'G4', first: 'Liam', middle: 'Faith' },
-  { guesser: 'G5', first: 'Noah', middle: 'Hope' },
-  { guesser: 'G6', first: 'Ethan', middle: 'Joy' },
-  { guesser: 'G7', first: 'Zoe', middle: 'Belle' },
+  { guesser: 'G1', first: 'Olivia', middle: 'Rose', birth: BIRTH },
+  { guesser: 'G2', first: 'Ava', middle: 'Grace', birth: BIRTH },
+  { guesser: 'G3', first: 'Mia', middle: 'Jane', birth: BIRTH },
+  { guesser: 'G4', first: 'Liam', middle: 'Faith', birth: BIRTH },
+  { guesser: 'G5', first: 'Noah', middle: 'Hope', birth: BIRTH },
+  { guesser: 'G6', first: 'Ethan', middle: 'Joy', birth: BIRTH },
+  { guesser: 'G7', first: 'Zoe', middle: 'Belle', birth: BIRTH },
 ];
 
 const LOCK_PICKS: Record<BoardId, string[]> = {
@@ -71,7 +76,7 @@ async function seedCandidates(target: ActionDeps): Promise<void> {
 function makeSeedGuesses(count: number): GuessInput[] {
   return Array.from({ length: count }, (_, i) => {
     const n = String(i + 1).padStart(2, '0');
-    return { guesser: `G${n}`, first: `First${n}`, middle: `Mid${n}` };
+    return { guesser: `G${n}`, first: `First${n}`, middle: `Mid${n}`, birth: BIRTH };
   });
 }
 
@@ -278,7 +283,7 @@ describe('revealAnswer', () => {
     await lockBoards(d, LOCK_PICKS);
 
     clock = '2027-01-10T12:00:00Z';
-    await revealAnswer(d, { first: ' Olivia', middle: 'ROSE' });
+    await revealAnswer(d, { first: ' Olivia', middle: 'ROSE', birth: REAL });
 
     const state = await readPublic(d);
     expect(state.phase).toBe('revealed');
@@ -298,24 +303,24 @@ describe('revealAnswer', () => {
     // locked, only the Final Five is eligible as the Answer at all (spec §1 "After the lock, that
     // means from the Final Five"), independent of the day's Elimination count.
     clock = '2027-01-10T12:00:00Z';
-    await expect(revealAnswer(d, { first: 'Ethan', middle: 'Rose' })).rejects.toMatchObject({
+    await expect(revealAnswer(d, { first: 'Ethan', middle: 'Rose', birth: REAL })).rejects.toMatchObject({
       status: 400,
       message: "The Answer's first name must be one of the first-name Final Five.",
     });
-    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Joy' })).rejects.toMatchObject({
+    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Joy', birth: REAL })).rejects.toMatchObject({
       status: 400,
       message: "The Answer's middle name must be one of the middle-name Final Five.",
     });
 
     // A Final Five member, same day, is accepted.
-    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose' })).resolves.toBeUndefined();
+    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose', birth: REAL })).resolves.toBeUndefined();
   });
 
   it('refuses a name that is not yet a Candidate, before the lock', async () => {
     clock = '2027-01-02T12:00:00Z';
     await seedCandidates(d);
 
-    await expect(revealAnswer(d, { first: 'Mystery', middle: 'Rose' })).rejects.toMatchObject({
+    await expect(revealAnswer(d, { first: 'Mystery', middle: 'Rose', birth: REAL })).rejects.toMatchObject({
       status: 400,
       message: "The Answer's first name must be a Candidate still on the first-name Board.",
     });
@@ -325,7 +330,7 @@ describe('revealAnswer', () => {
     clock = '2027-01-02T12:00:00Z';
     await seedCandidates(d);
 
-    await revealAnswer(d, { first: 'Olivia', middle: 'Rose' });
+    await revealAnswer(d, { first: 'Olivia', middle: 'Rose', birth: REAL });
 
     const state = await readPublic(d);
     expect(state.phase).toBe('revealed');
@@ -335,9 +340,9 @@ describe('revealAnswer', () => {
     clock = '2027-01-02T12:00:00Z';
     await seedCandidates(d);
 
-    await revealAnswer(d, { first: 'Olivia', middle: 'Rose' });
+    await revealAnswer(d, { first: 'Olivia', middle: 'Rose', birth: REAL });
 
-    await expect(submitGuess(d, { guesser: 'Late', first: 'Zoe', middle: 'Belle' })).rejects.toMatchObject({
+    await expect(submitGuess(d, { guesser: 'Late', first: 'Zoe', middle: 'Belle', birth: BIRTH })).rejects.toMatchObject({
       status: 409,
       message: 'Guessing is closed.',
     });
@@ -348,9 +353,72 @@ describe('revealAnswer', () => {
       message: 'The game is over.',
     });
     await expect(lockBoards(d, LOCK_PICKS)).rejects.toMatchObject({ status: 409, message: 'The game is over.' });
-    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose' })).rejects.toMatchObject({
+    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose', birth: REAL })).rejects.toMatchObject({
       status: 409,
       message: 'The game is over.',
     });
+  });
+});
+
+describe('Birth Details', () => {
+  // This block's game uses a Due Date of 2027-04-03 rather than baseGame's 2027-01-20, so the
+  // first two tests' guessed-birth-date window matches birth.test.ts's own worked example
+  // ('Pick a birth date between Mar 4 and May 3.'). The third test still goes through
+  // `submitGuess`'s window check, just with a birth date inside it; only the last two, which use
+  // `revealAnswer` (which never checks the window), are truly unaffected by the Due Date.
+  beforeEach(async () => {
+    await d.store.saveGame({ ...baseGame, dueDate: '2027-04-03' });
+  });
+
+  it('refuses a guessed birth date outside the window with the window in the message', async () => {
+    await expect(submitGuess(d, { ...mom, birth: { ...BIRTH, date: '2027-05-04' } })).rejects.toMatchObject({
+      status: 400,
+      message: 'Pick a birth date between Mar 4 and May 3.',
+    });
+  });
+
+  it('checks the window against the Due Date when the Guess is sent, keeping earlier Guesses', async () => {
+    const guessA = { ...mom, birth: { ...BIRTH, date: '2027-05-01' } };
+    await expect(submitGuess(d, guessA)).resolves.toMatchObject({ birth: guessA.birth });
+
+    await saveConfig(d, { dueDate: '2027-03-15' });
+
+    const guessB = { ...dad, birth: { ...BIRTH, date: '2027-05-01' } };
+    await expect(submitGuess(d, guessB)).rejects.toMatchObject({ status: 400 });
+
+    const loaded = await d.store.load();
+    expect(loaded.guesses).toHaveLength(1);
+    expect(loaded.guesses[0].birth).toEqual(guessA.birth);
+  });
+
+  it('stores and returns the Birth Details with the Guess', async () => {
+    const birth: BirthDetails = { ...BIRTH, date: '2027-04-10' };
+    const result = await submitGuess(d, { ...mom, birth });
+    expect(result).toEqual({ guesser: 'Mom', first: 'Olivia', middle: 'Rose', birth });
+
+    const loaded = await d.store.load();
+    expect(loaded.guesses[0].birth).toEqual(birth);
+  });
+
+  it('reveals a tiny baby and keeps the real Birth Details', async () => {
+    await seedCandidates(d);
+    const birth: BirthDetails = { date: '2027-02-01', time: '04:10', weightOz: 20, lengthIn: 9 };
+
+    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose', birth })).resolves.toBeUndefined();
+
+    const loaded = await d.store.load();
+    expect(loaded.game!.reveal!.birth).toEqual(birth);
+  });
+
+  it('refuses a real weight outside 0 lb 8 oz – 20 lb 0 oz', async () => {
+    await seedCandidates(d);
+    const birth: BirthDetails = { date: '2027-02-01', time: '04:10', weightOz: 7, lengthIn: 20 };
+
+    await expect(revealAnswer(d, { first: 'Olivia', middle: 'Rose', birth })).rejects.toMatchObject({
+      status: 400,
+      message: 'The real weight must be between 0 lb 8 oz and 20 lb 0 oz.',
+    });
+
+    expect((await d.store.load()).game?.reveal).toBeUndefined();
   });
 });
