@@ -88,7 +88,8 @@ describe('formatting', () => {
       expect(formatShortDay('2027-04-05')).toBe('Apr 5');
       expect(formatBirthDetails(b('2027-04-05', '00:30', 120, 20))).toBe('Apr 5 at 12:30 am · 7 lb 8 oz · 20 in');
     } finally {
-      process.env.TZ = tz;
+      if (tz === undefined) delete process.env.TZ;
+      else process.env.TZ = tz;
     }
   });
 });

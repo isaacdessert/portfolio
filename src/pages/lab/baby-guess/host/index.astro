@@ -242,8 +242,8 @@ function formatLengthOption(inches: number): string {
               />
             </div>
             <div class="flex flex-col gap-1">
-              <span class="text-sm font-semibold">Weight</span>
-              <div class="flex gap-2">
+              <span id="reveal-birth-weight-label" class="text-sm font-semibold">Weight</span>
+              <div class="flex gap-2" role="group" aria-labelledby="reveal-birth-weight-label">
                 <select
                   id="reveal-birth-lb"
                   aria-label="Pounds"

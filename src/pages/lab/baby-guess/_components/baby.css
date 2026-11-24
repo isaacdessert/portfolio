@@ -190,4 +190,6 @@ body {
 
 .birth-chart {
   display: block;
+  max-width: 100%;
+  height: auto;
 }

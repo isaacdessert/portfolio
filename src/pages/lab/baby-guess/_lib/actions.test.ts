@@ -363,8 +363,9 @@ describe('revealAnswer', () => {
 describe('Birth Details', () => {
   // This block's game uses a Due Date of 2027-04-03 rather than baseGame's 2027-01-20, so the
   // first two tests' guessed-birth-date window matches birth.test.ts's own worked example
-  // ('Pick a birth date between Mar 4 and May 3.'). The other three don't check the window at
-  // all (revealAnswer never does), so the Due Date is otherwise incidental for them.
+  // ('Pick a birth date between Mar 4 and May 3.'). The third test still goes through
+  // `submitGuess`'s window check, just with a birth date inside it; only the last two, which use
+  // `revealAnswer` (which never checks the window), are truly unaffected by the Due Date.
   beforeEach(async () => {
     await d.store.saveGame({ ...baseGame, dueDate: '2027-04-03' });
   });
@@ -417,5 +418,7 @@ describe('Birth Details', () => {
       status: 400,
       message: 'The real weight must be between 0 lb 8 oz and 20 lb 0 oz.',
     });
+
+    expect((await d.store.load()).game?.reveal).toBeUndefined();
   });
 });

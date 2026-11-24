@@ -86,6 +86,7 @@ function formatLengthOption(inches: number): string {
                 name="birth-date"
                 type="date"
                 required
+                aria-describedby="birth-date-help"
                 class="rounded-lg border px-3 py-2"
                 style="border-color: var(--gone); background: var(--card)"
               />
@@ -105,8 +106,8 @@ function formatLengthOption(inches: number): string {
             </div>
 
             <div class="flex flex-col gap-1">
-              <span class="text-sm font-semibold">Weight</span>
-              <div class="flex gap-2">
+              <span id="birth-weight-label" class="text-sm font-semibold">Weight</span>
+              <div class="flex gap-2" role="group" aria-labelledby="birth-weight-label">
                 <select
                   id="birth-lb"
                   name="birth-lb"
@@ -273,8 +274,7 @@ function formatLengthOption(inches: number): string {
               <thead>
                 <tr>
                   <th scope="col" class="py-1 pr-2">Guesser</th>
-                  <th scope="col" class="py-1 pr-2">First</th>
-                  <th scope="col" class="py-1 pr-2">Middle</th>
+                  <th scope="col" class="py-1 pr-2">Name</th>
                   <th scope="col" class="py-1 pr-2">Date</th>
                   <th scope="col" class="py-1 pr-2">Time</th>
                   <th scope="col" class="py-1 pr-2">Weight</th>
@@ -752,18 +752,18 @@ function formatLengthOption(inches: number): string {
     tbody.textContent = '';
     for (const guess of guesses) {
       const tr = document.createElement('tr');
-      const values = [
-        guess.guesser,
-        guess.first,
-        guess.middle,
-        guess.birth ? formatBirthValue('date', guess.birth) : '—',
-        guess.birth ? formatBirthValue('time', guess.birth) : '—',
-        guess.birth ? formatBirthValue('weight', guess.birth) : '—',
-        guess.birth ? formatBirthValue('length', guess.birth) : '—',
+      // Date and Time get `whitespace-nowrap` so a narrow phone screen can't wrap them mid-value.
+      const cells: [string, string][] = [
+        [guess.guesser, 'py-1 pr-2'],
+        [`${guess.first} ${guess.middle}`, 'py-1 pr-2'],
+        [guess.birth ? formatBirthValue('date', guess.birth) : '—', 'py-1 pr-2 whitespace-nowrap'],
+        [guess.birth ? formatBirthValue('time', guess.birth) : '—', 'py-1 pr-2 whitespace-nowrap'],
+        [guess.birth ? formatBirthValue('weight', guess.birth) : '—', 'py-1 pr-2'],
+        [guess.birth ? formatBirthValue('length', guess.birth) : '—', 'py-1'],
       ];
-      for (const value of values) {
+      for (const [value, className] of cells) {
         const td = document.createElement('td');
-        td.className = 'py-1 pr-2';
+        td.className = className;
         td.textContent = value;
         tr.appendChild(td);
       }

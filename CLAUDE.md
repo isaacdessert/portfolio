@@ -159,7 +159,7 @@ git push -u origin lab/<slug>   # preview; merge to main → isaacdessert.dev/la
   Satori's WOFF glyph decoding: every OG card renders with all text as tofu/replacement-glyph boxes,
   and none of the existing tests catch it (`card.test.ts` only checks the PNG signature and pixel
   dimensions, not that glyphs render).
-- **Preview, local dev and production share one Upstash DB.** baby-guess keys carry the environment (lab:baby-guess:<VERCEL_ENV>:…); local dev reads VERCEL_ENV="preview" from the pulled .env, so it shares the preview key space. Reset a non-production key space with node --env-file=.env src/pages/lab/baby-guess/_scripts/reset.mjs preview.
+- **Preview, local dev and production share one Upstash DB.** baby-guess keys carry the environment (lab:baby-guess:<VERCEL_ENV>:…); local dev reads VERCEL_ENV="preview" from the pulled .env, so it shares the preview key space. Reset a non-production key space with node --env-file=.env src/pages/lab/baby-guess/_scripts/reset.mjs preview. Reset the preview key space before a rehearsal too: a game revealed before Birth Details existed has no `reveal.birth` and its revealed state won't load.
 
 ## Design tokens
 
